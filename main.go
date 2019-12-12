@@ -5,6 +5,7 @@ import (
 	"github.com/Syfaro/telegram-bot-api"
 	_ "github.com/go-sql-driver/mysql"
 	"log"
+	"math/rand"
 	"time"
 )
 
@@ -12,11 +13,20 @@ func main() {
 	bot := BotStart()
 	my_db := DBStart()
 	defer my_db.Close()
+	go ChatMaker(my_db, bot)
 	BotUpdateLoop(bot, my_db)
 }
 
+//var numericKeyboard = tgbotapi.NewReplyKeyboard(
+//	tgbotapi.NewKeyboardButtonRow(
+//		tgbotapi.NewKeyboardButton("New chat"),
+//		tgbotapi.NewKeyboardButton("Leave chat"),
+//		tgbotapi.NewKeyboardButton("Report"),
+//	),
+//)
+
 func BotStart() *tgbotapi.BotAPI {
-	bot, err := tgbotapi.NewBotAPI("1057128816:AAE3MrZxSXnMPV1UNYuLbOQobd-sxUIhGw4")
+	bot, err := tgbotapi.NewBotAPI("1022122500:AAFy8sDJFUlgw0e7JURelghBPv_is5kG7ck") //1057128816:AAE3MrZxSXnMPV1UNYuLbOQobd-sxUIhGw4 - AnonStud 1022122500:AAFy8sDJFUlgw0e7JURelghBPv_is5kG7ck - Freedom
 	if err != nil {
 		log.Panic(err)
 	}
@@ -41,27 +51,50 @@ func BotUpdateLoop(my_bot *tgbotapi.BotAPI, database *sql.DB) {
 		}
 
 		if !update.Message.IsCommand() {
-			if FindChat(update.Message.From.ID, database) != 0{
+			if FindChat(update.Message.From.ID, database) != 0 {
 				chat_id := FindChat(update.Message.From.ID, database)
-				msg := tgbotapi.NewMessage(int64(chat_id), "Bot cannot send photos, stickers, documents, audios and videos yet!")
-				//photo := tgbotapi.NewPhotoUpload(int64(chat_id), nil)
+				msg := tgbotapi.NewMessage(int64(chat_id), "")
 
-				//photo.File = update.Message.Photo
-				//photo.UseExisting = true
 				msg.Text = update.Message.Text
 				if msg.Text != "" {
-					_, err := my_bot.Send(msg)
-					if err != nil {
-						log.Panic(err)
-					}
+					my_bot.Send(msg)
+				} else if update.Message.Photo != nil {
+					photo := tgbotapi.NewPhotoShare(int64(chat_id), "")
+					photo.FileID = (*update.Message.Photo)[2].FileID
+					my_bot.Send(photo)
+				} else if update.Message.Voice != nil {
+					voice := tgbotapi.NewVoiceShare(int64(chat_id), "")
+					voice.FileID = update.Message.Voice.FileID
+					my_bot.Send(voice)
+				} else if update.Message.Animation != nil {
+					voice := tgbotapi.NewAnimationShare(int64(chat_id), "")
+					voice.FileID = update.Message.Animation.FileID
+					my_bot.Send(voice)
+				} else if update.Message.Audio != nil {
+					audio := tgbotapi.NewAudioShare(int64(chat_id), "")
+					audio.FileID = update.Message.Audio.FileID
+					my_bot.Send(audio)
+				} else if update.Message.Sticker != nil {
+					sticker := tgbotapi.NewStickerShare(int64(chat_id), "")
+					sticker.FileID = update.Message.Sticker.FileID
+					my_bot.Send(sticker)
+				} else if update.Message.Document != nil {
+					doc := tgbotapi.NewDocumentShare(int64(chat_id), "")
+					doc.FileID = update.Message.Document.FileID
+					my_bot.Send(doc)
+				} else if update.Message.Video != nil {
+					video := tgbotapi.NewVideoShare(int64(chat_id), "")
+					video.FileID = update.Message.Video.FileID
+					my_bot.Send(video)
+				} else if update.Message.VideoNote != nil {
+					video_note := tgbotapi.NewVideoNoteShare(int64(chat_id),0, "")
+					video_note.FileID = update.Message.VideoNote.FileID
+					video_note.Length = update.Message.VideoNote.Length
+					my_bot.Send(video_note)
 				} else {
-					_, err := my_bot.Send(msg)
-					if err != nil {
-						log.Panic(err)
-					}
+					msg.Text = "Bot cannot send this shit yet! Pls, contact with creator"
+					my_bot.Send(msg)
 				}
-
-
 				continue
 			} else {
 				continue
@@ -75,57 +108,106 @@ func BotUpdateLoop(my_bot *tgbotapi.BotAPI, database *sql.DB) {
 		case "start":
 			if !CheckReg(update.Message.From.ID, database) {
 				FirstStart(update.Message.From.ID, database)
-				msg.Text = "You was registered"
+				msg.Text = "You were registered"
+				//msg.ReplyMarkup = numericKeyboard
 			} else {
-				msg.Text = "You are already registered"
+				msg.Text = "You have registered already"
+				//msg.ReplyMarkup = numericKeyboard
 			}
 		case "go_chat":
 			if CheckReg(update.Message.From.ID, database) {
 				if IsFree(update.Message.From.ID, database) {
 					if !IsSearch(update.Message.From.ID, database) {
-						go SearchChat(update, database, update.Message.From.ID, int64(update.Message.From.ID), my_bot)
+						ChangeSearch(database, update.Message.From.ID, 1)
 						msg.Text = "Search started"
+						//msg.ReplyMarkup = numericKeyboard
 					} else {
-						msg.Text = "You are already search"
+						msg.Text = "You are searching already"
+						//msg.ReplyMarkup = numericKeyboard
 					}
 				} else {
-					msg.Text = "You are already chatting"
+					msg.Text = "You are chatting already"
+					//msg.ReplyMarkup = numericKeyboard
+				}
+			} else {
+				msg.Text = "You need to register first"
+			}
+		case "leave_chat":
+			if CheckReg(update.Message.From.ID, database) {
+				if FindChat(update.Message.From.ID, database) != 0 {
+					chat_id := FindChat(update.Message.From.ID, database)
+					DeleteChat(update.Message.From.ID, database)
+					ChangeState(database, update.Message.From.ID, 0)
+					msg.Text = "You leaved a chat"
+
+					DeleteChat(chat_id, database)
+					ChangeState(database, chat_id, 0)
+					my_bot.Send(tgbotapi.NewMessage(int64(chat_id), "The stranger leave the chat"))
+				} else {
+					msg.Text = "You are not chatting now!"
+					//msg.ReplyMarkup = numericKeyboard
 				}
 			} else {
 				msg.Text = "You need to register first"
 			}
 		}
 
-		_, err := my_bot.Send(msg)
-		if err != nil {
-			log.Panic(err)
-		}
+		my_bot.Send(msg)
 	}
 }
 
-func SearchChat(update tgbotapi.Update, database *sql.DB, user_id int, chat_id int64, my_bot *tgbotapi.BotAPI) {
-	free_user := 0
-	msg := tgbotapi.NewMessage(chat_id, "")
+func ChatMaker( database *sql.DB, my_bot *tgbotapi.BotAPI) {
+	for true {
+		free_users := FindFree(database)
+		users_amount := len(free_users)
+		if users_amount > 1 {
+			rand.Seed(time.Now().UnixNano())
+			first_user := rand.Intn(users_amount)
+			second_user := rand.Intn(users_amount)
 
-	ChangeSearch(database, user_id, 1)
+			for second_user == first_user {
+				second_user = rand.Intn(users_amount)
+			}
 
-	for free_user == 0 {
-		free_user = FindFree(update.Message.From.ID, database)
+			ChangeSearch(database, free_users[first_user], 0)
+			ChangeSearch(database, free_users[second_user], 0)
+			ChangeState(database, free_users[first_user], 1)
+			ChangeState(database, free_users[second_user], 1)
+			AddChat(free_users[first_user], free_users[second_user], database)
+			AddChat(free_users[second_user], free_users[first_user], database)
+
+			msg := tgbotapi.NewMessage(int64(free_users[first_user]), "")
+			msg.Text = "Now you can chat"
+			my_bot.Send(msg)
+
+			msg = tgbotapi.NewMessage(int64(free_users[second_user]), "")
+			msg.Text = "Now you can chat"
+			my_bot.Send(msg)
+		}
 		amt := time.Duration(1000)
 		time.Sleep(time.Millisecond * amt)
-		continue
 	}
-
-	ChangeState(database, update.Message.From.ID, 1)
-	ChangeSearch(database, user_id, 0)
-	AddChat(update.Message.From.ID, free_user, database)
-
-	msg.Text = "Now you can chat"
-
-	_, err := my_bot.Send(msg)
-	if err != nil {
-		log.Panic(err)
-	}
+}
+func SearchChat(update tgbotapi.Update, database *sql.DB, user_id int, chat_id int64, my_bot *tgbotapi.BotAPI) {
+	//free_user := 0
+	//msg := tgbotapi.NewMessage(chat_id, "")
+	//
+	//ChangeSearch(database, user_id, 1)
+	//
+	//for free_user == 0 {
+	//	free_user = FindFree(update.Message.From.ID, database)
+	//	amt := time.Duration(1000)
+	//	time.Sleep(time.Millisecond * amt)
+	//	continue
+	//}
+	//
+	//ChangeState(database, update.Message.From.ID, 1)
+	//ChangeSearch(database, user_id, 0)
+	//AddChat(update.Message.From.ID, free_user, database)
+	//
+	//msg.Text = "Now you can chat"
+	//
+	//my_bot.Send(msg)
 }
 func DBStart() *sql.DB {
 	my_db, err := sql.Open("mysql", "root:1337@/anonstudchat")
@@ -239,20 +321,26 @@ func IsSearch(user_id int, my_db *sql.DB) bool {
 	}
 
 }
-func FindFree(user_id int, my_db *sql.DB) int {
-	stmtOut, err := my_db.Prepare("SELECT user_id FROM users_info WHERE user_free = 0 AND is_search = 1 AND user_id != ?")
+func FindFree(my_db *sql.DB) []int {
+	stmtOut, err := my_db.Query("SELECT user_id FROM users_info WHERE user_free = 0 AND is_search = 1")
 	if err != nil {
 		panic(err.Error())
 	}
 
-	var user_free int
-	err = stmtOut.QueryRow(user_id).Scan(&user_free)
-	if err != nil {
-		err = stmtOut.Close()
+	var user_free []int
+	var one_user int
+
+	for stmtOut.Next() {
+		err = stmtOut.Scan(&one_user)
 		if err != nil {
-			panic(err.Error())
+			err = stmtOut.Close()
+			if err != nil {
+				panic(err.Error())
+			}
+			user_free = append(user_free, 0)
+			return user_free
 		}
-		return 0
+		user_free = append(user_free, one_user)
 	}
 
 	err = stmtOut.Close()
@@ -332,4 +420,20 @@ func FindChat(user_id int, my_db *sql.DB) int {
 	}
 
 	return second_user
+}
+func DeleteChat(user_id int, my_db *sql.DB) {
+	stmtIns, err := my_db.Prepare("DELETE FROM chat_buffer WHERE first_user = ?")
+	if err != nil {
+		panic(err.Error())
+	}
+
+	_, err = stmtIns.Exec(user_id)
+	if err != nil {
+		panic(err.Error())
+	}
+
+	err = stmtIns.Close()
+	if err != nil {
+		panic(err.Error())
+	}
 }
