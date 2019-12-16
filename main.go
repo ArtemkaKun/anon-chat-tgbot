@@ -17,13 +17,12 @@ func main() {
 	BotUpdateLoop(bot, my_db)
 }
 
-//var numericKeyboard = tgbotapi.NewReplyKeyboard(
-//	tgbotapi.NewKeyboardButtonRow(
-//		tgbotapi.NewKeyboardButton("New chat"),
-//		tgbotapi.NewKeyboardButton("Leave chat"),
-//		tgbotapi.NewKeyboardButton("Report"),
-//	),
-//)
+var numericKeyboard = tgbotapi.NewReplyKeyboard(
+	tgbotapi.NewKeyboardButtonRow(
+		tgbotapi.NewKeyboardButton("New chat"),
+		tgbotapi.NewKeyboardButton("Leave chat"),
+	),
+)
 
 func BotStart() *tgbotapi.BotAPI {
 	bot, err := tgbotapi.NewBotAPI("1022122500:AAFy8sDJFUlgw0e7JURelghBPv_is5kG7ck") //1057128816:AAE3MrZxSXnMPV1UNYuLbOQobd-sxUIhGw4 - AnonStud 1022122500:AAFy8sDJFUlgw0e7JURelghBPv_is5kG7ck - Freedom
@@ -46,11 +45,58 @@ func BotUpdateLoop(my_bot *tgbotapi.BotAPI, database *sql.DB) {
 	}
 
 	for update := range updates {
+
 		if update.Message == nil {
 			continue
 		}
 
 		if !update.Message.IsCommand() {
+			switch update.Message.Text {
+			case "New chat":
+				msg := tgbotapi.NewMessage(int64(update.Message.From.ID), "")
+
+				if CheckReg(update.Message.From.ID, database) {
+					if IsFree(update.Message.From.ID, database) {
+						if !IsSearch(update.Message.From.ID, database) {
+							ChangeSearch(database, update.Message.From.ID, 1)
+							msg.Text = "Search started"
+						} else {
+							msg.Text = "You are searching already"
+						}
+					} else {
+						msg.Text = "You are chatting already"
+					}
+				} else {
+					msg.Text = "You need to register first"
+				}
+
+				my_bot.Send(msg)
+				continue
+
+			case "Leave chat":
+				msg := tgbotapi.NewMessage(int64(update.Message.From.ID), "")
+
+				if CheckReg(update.Message.From.ID, database) {
+					if FindChat(update.Message.From.ID, database) != 0 {
+						chat_id := FindChat(update.Message.From.ID, database)
+						DeleteChat(update.Message.From.ID, database)
+						ChangeState(database, update.Message.From.ID, 0)
+						msg.Text = "You leaved a chat"
+
+						DeleteChat(chat_id, database)
+						ChangeState(database, chat_id, 0)
+						my_bot.Send(tgbotapi.NewMessage(int64(chat_id), "The stranger leave the chat"))
+					} else {
+						msg.Text = "You are not chatting now!"
+					}
+				} else {
+					msg.Text = "You need to register first"
+				}
+
+				my_bot.Send(msg)
+				continue
+			}
+
 			if FindChat(update.Message.From.ID, database) != 0 {
 				chat_id := FindChat(update.Message.From.ID, database)
 				msg := tgbotapi.NewMessage(int64(chat_id), "")
@@ -92,7 +138,7 @@ func BotUpdateLoop(my_bot *tgbotapi.BotAPI, database *sql.DB) {
 					video_note.Length = update.Message.VideoNote.Length
 					my_bot.Send(video_note)
 				} else {
-					msg.Text = "Bot cannot send this shit yet! Pls, contact with creator"
+					msg.Text = "Bot cannot send this shit yet! Please, contact with creator"
 					my_bot.Send(msg)
 				}
 				continue
@@ -109,10 +155,10 @@ func BotUpdateLoop(my_bot *tgbotapi.BotAPI, database *sql.DB) {
 			if !CheckReg(update.Message.From.ID, database) {
 				FirstStart(update.Message.From.ID, database)
 				msg.Text = "You were registered"
-				//msg.ReplyMarkup = numericKeyboard
+				msg.ReplyMarkup = numericKeyboard
 			} else {
 				msg.Text = "You have registered already"
-				//msg.ReplyMarkup = numericKeyboard
+				msg.ReplyMarkup = numericKeyboard
 			}
 		case "go_chat":
 			if CheckReg(update.Message.From.ID, database) {
@@ -120,14 +166,11 @@ func BotUpdateLoop(my_bot *tgbotapi.BotAPI, database *sql.DB) {
 					if !IsSearch(update.Message.From.ID, database) {
 						ChangeSearch(database, update.Message.From.ID, 1)
 						msg.Text = "Search started"
-						//msg.ReplyMarkup = numericKeyboard
 					} else {
 						msg.Text = "You are searching already"
-						//msg.ReplyMarkup = numericKeyboard
 					}
 				} else {
 					msg.Text = "You are chatting already"
-					//msg.ReplyMarkup = numericKeyboard
 				}
 			} else {
 				msg.Text = "You need to register first"
@@ -145,7 +188,6 @@ func BotUpdateLoop(my_bot *tgbotapi.BotAPI, database *sql.DB) {
 					my_bot.Send(tgbotapi.NewMessage(int64(chat_id), "The stranger leave the chat"))
 				} else {
 					msg.Text = "You are not chatting now!"
-					//msg.ReplyMarkup = numericKeyboard
 				}
 			} else {
 				msg.Text = "You need to register first"
@@ -187,27 +229,6 @@ func ChatMaker( database *sql.DB, my_bot *tgbotapi.BotAPI) {
 		amt := time.Duration(1000)
 		time.Sleep(time.Millisecond * amt)
 	}
-}
-func SearchChat(update tgbotapi.Update, database *sql.DB, user_id int, chat_id int64, my_bot *tgbotapi.BotAPI) {
-	//free_user := 0
-	//msg := tgbotapi.NewMessage(chat_id, "")
-	//
-	//ChangeSearch(database, user_id, 1)
-	//
-	//for free_user == 0 {
-	//	free_user = FindFree(update.Message.From.ID, database)
-	//	amt := time.Duration(1000)
-	//	time.Sleep(time.Millisecond * amt)
-	//	continue
-	//}
-	//
-	//ChangeState(database, update.Message.From.ID, 1)
-	//ChangeSearch(database, user_id, 0)
-	//AddChat(update.Message.From.ID, free_user, database)
-	//
-	//msg.Text = "Now you can chat"
-	//
-	//my_bot.Send(msg)
 }
 func DBStart() *sql.DB {
 	my_db, err := sql.Open("mysql", "root:1337@/anonstudchat")
