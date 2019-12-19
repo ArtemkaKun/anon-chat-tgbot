@@ -9,6 +9,8 @@ import (
 	"time"
 )
 
+const ADMIN int64 = 375806606
+
 func main() {
 	bot := BotStart()
 	my_db := DBStart()
@@ -55,10 +57,10 @@ func BotUpdateLoop(my_bot *tgbotapi.BotAPI, database *sql.DB) {
 			case "New chat":
 				msg := tgbotapi.NewMessage(int64(update.Message.From.ID), "")
 
-				if CheckReg(update.Message.From.ID, database) {
-					if IsFree(update.Message.From.ID, database) {
-						if !IsSearch(update.Message.From.ID, database) {
-							ChangeSearch(database, update.Message.From.ID, 1)
+				if CheckReg(update.Message.From.ID, database, my_bot) {
+					if IsFree(update.Message.From.ID, database, my_bot) {
+						if !IsSearch(update.Message.From.ID, database, my_bot) {
+							ChangeSearch(database, update.Message.From.ID, 1, my_bot)
 							msg.Text = "Search started"
 						} else {
 							msg.Text = "You are searching already"
@@ -70,22 +72,28 @@ func BotUpdateLoop(my_bot *tgbotapi.BotAPI, database *sql.DB) {
 					msg.Text = "You need to register first"
 				}
 
-				my_bot.Send(msg)
+				_, err := my_bot.Send(msg)
+				if err != nil {
+					ErrorCatch(err.Error(), my_bot)
+				}
 				continue
 
 			case "Leave chat":
 				msg := tgbotapi.NewMessage(int64(update.Message.From.ID), "")
 
-				if CheckReg(update.Message.From.ID, database) {
-					if FindChat(update.Message.From.ID, database) != 0 {
-						chat_id := FindChat(update.Message.From.ID, database)
-						DeleteChat(update.Message.From.ID, database)
-						ChangeState(database, update.Message.From.ID, 0)
+				if CheckReg(update.Message.From.ID, database, my_bot) {
+					if FindChat(update.Message.From.ID, database, my_bot) != 0 {
+						chat_id := FindChat(update.Message.From.ID, database, my_bot)
+						DeleteChat(update.Message.From.ID, database, my_bot)
+						ChangeState(database, update.Message.From.ID, 0, my_bot)
 						msg.Text = "You leaved a chat"
 
-						DeleteChat(chat_id, database)
-						ChangeState(database, chat_id, 0)
-						my_bot.Send(tgbotapi.NewMessage(int64(chat_id), "The stranger leave the chat"))
+						DeleteChat(chat_id, database, my_bot)
+						ChangeState(database, chat_id, 0, my_bot)
+						_, err := my_bot.Send(tgbotapi.NewMessage(int64(chat_id), "The stranger leave the chat"))
+						if err != nil {
+							ErrorCatch(err.Error(), my_bot)
+						}
 					} else {
 						msg.Text = "You are not chatting now!"
 					}
@@ -93,53 +101,86 @@ func BotUpdateLoop(my_bot *tgbotapi.BotAPI, database *sql.DB) {
 					msg.Text = "You need to register first"
 				}
 
-				my_bot.Send(msg)
+				_, err := my_bot.Send(msg)
+				if err != nil {
+					ErrorCatch(err.Error(), my_bot)
+				}
 				continue
 			}
 
-			if FindChat(update.Message.From.ID, database) != 0 {
-				chat_id := FindChat(update.Message.From.ID, database)
+			if FindChat(update.Message.From.ID, database, my_bot) != 0 {
+				chat_id := FindChat(update.Message.From.ID, database, my_bot)
 				msg := tgbotapi.NewMessage(int64(chat_id), "")
 
 				msg.Text = update.Message.Text
 				if msg.Text != "" {
-					my_bot.Send(msg)
+					_, err := my_bot.Send(msg)
+					if err != nil {
+						ErrorCatch(err.Error(), my_bot)
+					}
 				} else if update.Message.Photo != nil {
 					photo := tgbotapi.NewPhotoShare(int64(chat_id), "")
 					photo.FileID = (*update.Message.Photo)[2].FileID
-					my_bot.Send(photo)
+					_, err := my_bot.Send(photo)
+					if err != nil {
+						ErrorCatch(err.Error(), my_bot)
+					}
 				} else if update.Message.Voice != nil {
 					voice := tgbotapi.NewVoiceShare(int64(chat_id), "")
 					voice.FileID = update.Message.Voice.FileID
-					my_bot.Send(voice)
+					_, err := my_bot.Send(voice)
+					if err != nil {
+						ErrorCatch(err.Error(), my_bot)
+					}
 				} else if update.Message.Animation != nil {
 					voice := tgbotapi.NewAnimationShare(int64(chat_id), "")
 					voice.FileID = update.Message.Animation.FileID
-					my_bot.Send(voice)
+					_, err := my_bot.Send(voice)
+					if err != nil {
+						ErrorCatch(err.Error(), my_bot)
+					}
 				} else if update.Message.Audio != nil {
 					audio := tgbotapi.NewAudioShare(int64(chat_id), "")
 					audio.FileID = update.Message.Audio.FileID
-					my_bot.Send(audio)
+					_, err := my_bot.Send(audio)
+					if err != nil {
+						ErrorCatch(err.Error(), my_bot)
+					}
 				} else if update.Message.Sticker != nil {
 					sticker := tgbotapi.NewStickerShare(int64(chat_id), "")
 					sticker.FileID = update.Message.Sticker.FileID
-					my_bot.Send(sticker)
+					_, err := my_bot.Send(sticker)
+					if err != nil {
+						ErrorCatch(err.Error(), my_bot)
+					}
 				} else if update.Message.Document != nil {
 					doc := tgbotapi.NewDocumentShare(int64(chat_id), "")
 					doc.FileID = update.Message.Document.FileID
-					my_bot.Send(doc)
+					_, err := my_bot.Send(doc)
+					if err != nil {
+						ErrorCatch(err.Error(), my_bot)
+					}
 				} else if update.Message.Video != nil {
 					video := tgbotapi.NewVideoShare(int64(chat_id), "")
 					video.FileID = update.Message.Video.FileID
-					my_bot.Send(video)
+					_, err := my_bot.Send(video)
+					if err != nil {
+						ErrorCatch(err.Error(), my_bot)
+					}
 				} else if update.Message.VideoNote != nil {
 					video_note := tgbotapi.NewVideoNoteShare(int64(chat_id),0, "")
 					video_note.FileID = update.Message.VideoNote.FileID
 					video_note.Length = update.Message.VideoNote.Length
-					my_bot.Send(video_note)
+					_, err := my_bot.Send(video_note)
+					if err != nil {
+						ErrorCatch(err.Error(), my_bot)
+					}
 				} else {
 					msg.Text = "Bot cannot send this shit yet! Please, contact with creator"
-					my_bot.Send(msg)
+					_, err := my_bot.Send(msg)
+					if err != nil {
+						ErrorCatch(err.Error(), my_bot)
+					}
 				}
 				continue
 			} else {
@@ -152,8 +193,8 @@ func BotUpdateLoop(my_bot *tgbotapi.BotAPI, database *sql.DB) {
 
 		switch update.Message.Command() {
 		case "start":
-			if !CheckReg(update.Message.From.ID, database) {
-				FirstStart(update.Message.From.ID, database)
+			if !CheckReg(update.Message.From.ID, database, my_bot) {
+				FirstStart(update.Message.From.ID, database, my_bot)
 				msg.Text = "You were registered"
 				msg.ReplyMarkup = numericKeyboard
 			} else {
@@ -161,10 +202,10 @@ func BotUpdateLoop(my_bot *tgbotapi.BotAPI, database *sql.DB) {
 				msg.ReplyMarkup = numericKeyboard
 			}
 		case "go_chat":
-			if CheckReg(update.Message.From.ID, database) {
-				if IsFree(update.Message.From.ID, database) {
-					if !IsSearch(update.Message.From.ID, database) {
-						ChangeSearch(database, update.Message.From.ID, 1)
+			if CheckReg(update.Message.From.ID, database, my_bot) {
+				if IsFree(update.Message.From.ID, database, my_bot) {
+					if !IsSearch(update.Message.From.ID, database, my_bot) {
+						ChangeSearch(database, update.Message.From.ID, 1, my_bot)
 						msg.Text = "Search started"
 					} else {
 						msg.Text = "You are searching already"
@@ -176,16 +217,19 @@ func BotUpdateLoop(my_bot *tgbotapi.BotAPI, database *sql.DB) {
 				msg.Text = "You need to register first"
 			}
 		case "leave_chat":
-			if CheckReg(update.Message.From.ID, database) {
-				if FindChat(update.Message.From.ID, database) != 0 {
-					chat_id := FindChat(update.Message.From.ID, database)
-					DeleteChat(update.Message.From.ID, database)
-					ChangeState(database, update.Message.From.ID, 0)
+			if CheckReg(update.Message.From.ID, database, my_bot) {
+				if FindChat(update.Message.From.ID, database, my_bot) != 0 {
+					chat_id := FindChat(update.Message.From.ID, database, my_bot)
+					DeleteChat(update.Message.From.ID, database, my_bot)
+					ChangeState(database, update.Message.From.ID, 0, my_bot)
 					msg.Text = "You leaved a chat"
 
-					DeleteChat(chat_id, database)
-					ChangeState(database, chat_id, 0)
-					my_bot.Send(tgbotapi.NewMessage(int64(chat_id), "The stranger leave the chat"))
+					DeleteChat(chat_id, database, my_bot)
+					ChangeState(database, chat_id, 0, my_bot)
+					_, err := my_bot.Send(tgbotapi.NewMessage(int64(chat_id), "The stranger leave the chat"))
+					if err != nil {
+						ErrorCatch(err.Error(), my_bot)
+					}
 				} else {
 					msg.Text = "You are not chatting now!"
 				}
@@ -194,13 +238,16 @@ func BotUpdateLoop(my_bot *tgbotapi.BotAPI, database *sql.DB) {
 			}
 		}
 
-		my_bot.Send(msg)
+		_, err := my_bot.Send(msg)
+		if err != nil {
+			ErrorCatch(err.Error(), my_bot)
+		}
 	}
 }
 
-func ChatMaker( database *sql.DB, my_bot *tgbotapi.BotAPI) {
+func ChatMaker(database *sql.DB, my_bot *tgbotapi.BotAPI) {
 	for true {
-		free_users := FindFree(database)
+		free_users := FindFree(database, my_bot)
 		users_amount := len(free_users)
 		if users_amount > 1 {
 			rand.Seed(time.Now().UnixNano())
@@ -211,27 +258,33 @@ func ChatMaker( database *sql.DB, my_bot *tgbotapi.BotAPI) {
 				second_user = rand.Intn(users_amount)
 			}
 
-			ChangeSearch(database, free_users[first_user], 0)
-			ChangeSearch(database, free_users[second_user], 0)
-			ChangeState(database, free_users[first_user], 1)
-			ChangeState(database, free_users[second_user], 1)
-			AddChat(free_users[first_user], free_users[second_user], database)
-			AddChat(free_users[second_user], free_users[first_user], database)
+			ChangeSearch(database, free_users[first_user], 0, my_bot)
+			ChangeSearch(database, free_users[second_user], 0, my_bot)
+			ChangeState(database, free_users[first_user], 1, my_bot)
+			ChangeState(database, free_users[second_user], 1, my_bot)
+			AddChat(free_users[first_user], free_users[second_user], database, my_bot)
+			AddChat(free_users[second_user], free_users[first_user], database, my_bot)
 
 			msg := tgbotapi.NewMessage(int64(free_users[first_user]), "")
 			msg.Text = "Now you can chat"
-			my_bot.Send(msg)
+			_, err := my_bot.Send(msg)
+			if err != nil {
+				ErrorCatch(err.Error(), my_bot)
+			}
 
 			msg = tgbotapi.NewMessage(int64(free_users[second_user]), "")
 			msg.Text = "Now you can chat"
-			my_bot.Send(msg)
+			_, err = my_bot.Send(msg)
+			if err != nil {
+				ErrorCatch(err.Error(), my_bot)
+			}
 		}
 		amt := time.Duration(1000)
 		time.Sleep(time.Millisecond * amt)
 	}
 }
 func DBStart() *sql.DB {
-	my_db, err := sql.Open("mysql", "root:1337@/anonstudchat")
+	my_db, err := sql.Open("mysql", "root:11hahozeGood!@/anonstudchat")
 	if err != nil {
 		log.Panic(err)
 	} else {
@@ -242,25 +295,29 @@ func DBStart() *sql.DB {
 	}
 	return my_db
 }
-func FirstStart(user_id int, my_db *sql.DB) {
+func FirstStart(user_id int, my_db *sql.DB, my_bot *tgbotapi.BotAPI) {
 	stmtIns, err := my_db.Prepare("INSERT INTO users_info VALUES (?, ?, ?)")
 	if err != nil {
+		ErrorCatch(err.Error(), my_bot)
 		panic(err.Error())
 	}
 
 	_, err = stmtIns.Exec(user_id, 0, 0)
 	if err != nil {
+		ErrorCatch(err.Error(), my_bot)
 		panic(err.Error())
 	}
 
 	err = stmtIns.Close()
 	if err != nil {
+		ErrorCatch(err.Error(), my_bot)
 		panic(err.Error())
 	}
 }
-func CheckReg(user_id int, my_db *sql.DB) bool {
+func CheckReg(user_id int, my_db *sql.DB, my_bot *tgbotapi.BotAPI) bool {
 	stmtOut, err := my_db.Prepare("SELECT user_id FROM users_info WHERE user_id = ?")
 	if err != nil {
+		ErrorCatch(err.Error(), my_bot)
 		panic(err.Error())
 	}
 
@@ -269,6 +326,7 @@ func CheckReg(user_id int, my_db *sql.DB) bool {
 	if err != nil {
 		err = stmtOut.Close()
 		if err != nil {
+			ErrorCatch(err.Error(), my_bot)
 			panic(err.Error())
 		}
 		return false
@@ -276,6 +334,7 @@ func CheckReg(user_id int, my_db *sql.DB) bool {
 
 	err = stmtOut.Close()
 	if err != nil {
+		ErrorCatch(err.Error(), my_bot)
 		panic(err.Error())
 	}
 
@@ -286,9 +345,10 @@ func CheckReg(user_id int, my_db *sql.DB) bool {
 	}
 
 }
-func IsFree(user_id int, my_db *sql.DB) bool {
+func IsFree(user_id int, my_db *sql.DB, my_bot *tgbotapi.BotAPI) bool {
 	stmtOut, err := my_db.Prepare("SELECT user_free FROM users_info WHERE user_id = ?")
 	if err != nil {
+		ErrorCatch(err.Error(), my_bot)
 		panic(err.Error())
 	}
 
@@ -297,6 +357,7 @@ func IsFree(user_id int, my_db *sql.DB) bool {
 	if err != nil {
 		err = stmtOut.Close()
 		if err != nil {
+			ErrorCatch(err.Error(), my_bot)
 			panic(err.Error())
 		}
 		return false
@@ -304,6 +365,7 @@ func IsFree(user_id int, my_db *sql.DB) bool {
 
 	err = stmtOut.Close()
 	if err != nil {
+		ErrorCatch(err.Error(), my_bot)
 		panic(err.Error())
 	}
 
@@ -314,9 +376,10 @@ func IsFree(user_id int, my_db *sql.DB) bool {
 	}
 
 }
-func IsSearch(user_id int, my_db *sql.DB) bool {
+func IsSearch(user_id int, my_db *sql.DB, my_bot *tgbotapi.BotAPI) bool {
 	stmtOut, err := my_db.Prepare("SELECT is_search FROM users_info WHERE user_id = ?")
 	if err != nil {
+		ErrorCatch(err.Error(), my_bot)
 		panic(err.Error())
 	}
 
@@ -325,6 +388,7 @@ func IsSearch(user_id int, my_db *sql.DB) bool {
 	if err != nil {
 		err = stmtOut.Close()
 		if err != nil {
+			ErrorCatch(err.Error(), my_bot)
 			panic(err.Error())
 		}
 		return false
@@ -332,6 +396,7 @@ func IsSearch(user_id int, my_db *sql.DB) bool {
 
 	err = stmtOut.Close()
 	if err != nil {
+		ErrorCatch(err.Error(), my_bot)
 		panic(err.Error())
 	}
 
@@ -342,9 +407,10 @@ func IsSearch(user_id int, my_db *sql.DB) bool {
 	}
 
 }
-func FindFree(my_db *sql.DB) []int {
+func FindFree(my_db *sql.DB, my_bot *tgbotapi.BotAPI) []int {
 	stmtOut, err := my_db.Query("SELECT user_id FROM users_info WHERE user_free = 0 AND is_search = 1")
 	if err != nil {
+		ErrorCatch(err.Error(), my_bot)
 		panic(err.Error())
 	}
 
@@ -356,6 +422,7 @@ func FindFree(my_db *sql.DB) []int {
 		if err != nil {
 			err = stmtOut.Close()
 			if err != nil {
+				ErrorCatch(err.Error(), my_bot)
 				panic(err.Error())
 			}
 			user_free = append(user_free, 0)
@@ -366,62 +433,73 @@ func FindFree(my_db *sql.DB) []int {
 
 	err = stmtOut.Close()
 	if err != nil {
+		ErrorCatch(err.Error(), my_bot)
 		panic(err.Error())
 	}
 
 	return user_free
 }
-func ChangeSearch(my_db *sql.DB, user_id int, status int) {
+func ChangeSearch(my_db *sql.DB, user_id int, status int, my_bot *tgbotapi.BotAPI) {
 	stmtIns, err := my_db.Prepare("UPDATE users_info SET is_search = ? WHERE user_id = ?")
 	if err != nil {
+		ErrorCatch(err.Error(), my_bot)
 		panic(err.Error())
 	}
 
 	_, err = stmtIns.Exec(status, user_id)
 	if err != nil {
+		ErrorCatch(err.Error(), my_bot)
 		panic(err.Error())
 	}
 
 	err = stmtIns.Close()
 	if err != nil {
+		ErrorCatch(err.Error(), my_bot)
 		panic(err.Error())
 	}
 }
-func ChangeState(my_db *sql.DB, user_id int, status int) {
+func ChangeState(my_db *sql.DB, user_id int, status int, my_bot *tgbotapi.BotAPI) {
 	stmtIns, err := my_db.Prepare("UPDATE users_info SET user_free = ? WHERE user_id = ?")
 	if err != nil {
+		ErrorCatch(err.Error(), my_bot)
 		panic(err.Error())
 	}
 
 	_, err = stmtIns.Exec(status, user_id)
 	if err != nil {
+		ErrorCatch(err.Error(), my_bot)
 		panic(err.Error())
 	}
 
 	err = stmtIns.Close()
 	if err != nil {
+		ErrorCatch(err.Error(), my_bot)
 		panic(err.Error())
 	}
 }
-func AddChat(first_user_id int, second_user_id int, my_db *sql.DB) {
+func AddChat(first_user_id int, second_user_id int, my_db *sql.DB, my_bot *tgbotapi.BotAPI) {
 	stmtIns, err := my_db.Prepare("INSERT INTO chat_buffer VALUES (?, ?)")
 	if err != nil {
+		ErrorCatch(err.Error(), my_bot)
 		panic(err.Error())
 	}
 
 	_, err = stmtIns.Exec(first_user_id, second_user_id)
 	if err != nil {
+		ErrorCatch(err.Error(), my_bot)
 		panic(err.Error())
 	}
 
 	err = stmtIns.Close()
 	if err != nil {
+		ErrorCatch(err.Error(), my_bot)
 		panic(err.Error())
 	}
 }
-func FindChat(user_id int, my_db *sql.DB) int {
+func FindChat(user_id int, my_db *sql.DB, my_bot *tgbotapi.BotAPI) int {
 	stmtOut, err := my_db.Prepare("SELECT second_user FROM chat_buffer WHERE first_user = ?")
 	if err != nil {
+		ErrorCatch(err.Error(), my_bot)
 		panic(err.Error())
 	}
 
@@ -430,6 +508,7 @@ func FindChat(user_id int, my_db *sql.DB) int {
 	if err != nil {
 		err = stmtOut.Close()
 		if err != nil {
+			ErrorCatch(err.Error(), my_bot)
 			panic(err.Error())
 		}
 		return 0
@@ -437,24 +516,33 @@ func FindChat(user_id int, my_db *sql.DB) int {
 
 	err = stmtOut.Close()
 	if err != nil {
+		ErrorCatch(err.Error(), my_bot)
 		panic(err.Error())
 	}
 
 	return second_user
 }
-func DeleteChat(user_id int, my_db *sql.DB) {
+func DeleteChat(user_id int, my_db *sql.DB, my_bot *tgbotapi.BotAPI) {
 	stmtIns, err := my_db.Prepare("DELETE FROM chat_buffer WHERE first_user = ?")
 	if err != nil {
+		ErrorCatch(err.Error(), my_bot)
 		panic(err.Error())
 	}
 
 	_, err = stmtIns.Exec(user_id)
 	if err != nil {
+		ErrorCatch(err.Error(), my_bot)
 		panic(err.Error())
 	}
 
 	err = stmtIns.Close()
 	if err != nil {
+		ErrorCatch(err.Error(), my_bot)
 		panic(err.Error())
 	}
+}
+
+func ErrorCatch(err string, my_bot *tgbotapi.BotAPI) {
+	msg := tgbotapi.NewMessage(ADMIN, err)
+	my_bot.Send(msg)
 }
