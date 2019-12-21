@@ -195,12 +195,12 @@ func BotUpdateLoop(my_bot *tgbotapi.BotAPI, database *sql.DB) {
 		case "start":
 			if !CheckReg(update.Message.From.ID, database, my_bot) {
 				FirstStart(update.Message.From.ID, database, my_bot)
-				msg.Text = "Hello, this is Freedom chat, where you can freely express your minds and talk with other strangers\n" +
-					"To start the chat, send /go_chat command or press \"New chat\" button\n" +
-					"To leave the chat, send /leave_chat command or press \"Leave chat\" button\n" +
-					"Bot doesn't store any personal data, so chats are fully anonymous" +
-					"If You want to check how the bot works - check my video (https://www.youtube.com/watch?v=drtAdOByW54&t=1s)" +
-					"If You have some questions or suggestions, please, feel free to contact with me, @YUART\n" +
+				msg.Text = "Hello, this is Freedom chat, where you can freely express your minds and talk with other strangers.\n\n" +
+					"To start the chat, send /go_chat command or press \"New chat\" button\n\n" +
+					"To leave the chat, send /leave_chat command or press \"Leave chat\" button\n\n" +
+					"Bot doesn't store any personal data, so chats are fully anonymous.\n\n" +
+					"If You want to check how the bot works - check my video (https://www.youtube.com/watch?v=drtAdOByW54&t=1s)\n\n" +
+					"If You have some questions or suggestions, please, feel free to contact with me, @YUART\n\n" +
 					"Also, check my Patreon page (https://www.patreon.com/artemkakun) if you want receive some bonuses from me :)\n"
 				msg.ReplyMarkup = numericKeyboard
 			} else {
