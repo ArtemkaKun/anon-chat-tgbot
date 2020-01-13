@@ -27,7 +27,7 @@ var numericKeyboard = tgbotapi.NewReplyKeyboard(
 )
 
 func BotStart() *tgbotapi.BotAPI {
-	bot, err := tgbotapi.NewBotAPI("1022122500:AAFy8sDJFUlgw0e7JURelghBPv_is5kG7ck") //1057128816:AAE3MrZxSXnMPV1UNYuLbOQobd-sxUIhGw4 - AnonStud 1022122500:AAFy8sDJFUlgw0e7JURelghBPv_is5kG7ck - Freedom
+	bot, err := tgbotapi.NewBotAPI("NEW BOT TOKEN HERE")
 	if err != nil {
 		log.Panic(err)
 	}
