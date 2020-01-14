@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-const ADMIN int64 = 375806606
+const ADMIN int64 = admin_id_here;
 
 func main() {
 	bot := BotStart()
@@ -296,7 +296,7 @@ func ChatMaker(database *sql.DB, my_bot *tgbotapi.BotAPI) {
 	}
 }
 func DBStart() *sql.DB {
-	my_db, err := sql.Open("mysql", "root:11hahozeGood!@/anonstudchat")
+	my_db, err := sql.Open("mysql", "root:db_pass_here@/anonstudchat")
 	if err != nil {
 		log.Panic(err)
 	} else {
