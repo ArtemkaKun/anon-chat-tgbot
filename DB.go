@@ -9,10 +9,9 @@ import (
 var DBConnection *pgx.Conn
 
 func init() {
-	connection, err := pgx.Connect(context.Background(), "postgres://postgres:postgres@localhost:5432/anonchat-tgbot")
+	connection, err := pgx.Connect(context.Background(), "postgres://postgres:1337@localhost:5432/anonchat-tgbot")
 	if err != nil {
 		DBConnectionError(err)
-		return
 	}
 
 	fmt.Println("Connected to PSQL!")
@@ -24,8 +23,20 @@ func UserFirstStart(user_id int) {
 	_, err := DBConnection.Exec(context.Background(), "INSERT INTO public.users VALUES($1, $2, $3)",
 		user_id, false, false)
 	if err != nil {
-		DBQueryError()
+		DBQueryError(err)
 	}
+}
+
+func CheckUserReg(user_id int) bool {
+	regStatus, err := DBConnection.Query(context.Background(), "SELECT user_id FROM public.users WHERE user_id = $1",
+		user_id)
+	if err != nil {
+		DBQueryError(err)
+	}
+
+	defer regStatus.Close()
+
+	return regStatus.Next()
 }
 
 func DBQueryError(err error) {
@@ -34,4 +45,5 @@ func DBQueryError(err error) {
 
 func DBConnectionError(err error) {
 	fmt.Println(fmt.Errorf("Unable to connection to database: %w\n", err))
+	panic(err)
 }

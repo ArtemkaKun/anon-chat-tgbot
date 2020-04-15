@@ -2,16 +2,12 @@ package main
 
 import (
 	"database/sql"
-	"github.com/Syfaro/telegram-bot-api"
 	"log"
 	"math/rand"
 	"time"
 )
 
-const ADMIN int64 = admin_id_here
-
 func main() {
-	bot := BotStart()
 	my_db := DBStart()
 	defer my_db.Close()
 	go ChatMaker(my_db, bot)
@@ -56,7 +52,7 @@ func BotUpdateLoop(my_bot *tgbotapi.BotAPI, database *sql.DB) {
 			case "New chat":
 				msg := tgbotapi.NewMessage(int64(update.Message.From.ID), "")
 
-				if CheckReg(update.Message.From.ID, database, my_bot) {
+				if CheckUserReg(update.Message.From.ID, database, my_bot) {
 					if IsFree(update.Message.From.ID, database, my_bot) {
 						if !IsSearch(update.Message.From.ID, database, my_bot) {
 							ChangeSearch(database, update.Message.From.ID, 1, my_bot)
@@ -80,7 +76,7 @@ func BotUpdateLoop(my_bot *tgbotapi.BotAPI, database *sql.DB) {
 			case "Leave chat":
 				msg := tgbotapi.NewMessage(int64(update.Message.From.ID), "")
 
-				if CheckReg(update.Message.From.ID, database, my_bot) {
+				if CheckUserReg(update.Message.From.ID, database, my_bot) {
 					if FindChat(update.Message.From.ID, database, my_bot) != 0 {
 						chat_id := FindChat(update.Message.From.ID, database, my_bot)
 						DeleteChat(update.Message.From.ID, database, my_bot)
@@ -192,7 +188,7 @@ func BotUpdateLoop(my_bot *tgbotapi.BotAPI, database *sql.DB) {
 
 		switch update.Message.Command() {
 		case "start":
-			if !CheckReg(update.Message.From.ID, database, my_bot) {
+			if !CheckUserReg(update.Message.From.ID, database, my_bot) {
 				UserFirstStart(update.Message.From.ID, database, my_bot)
 				msg.Text = "Hello, this is Freedom chat, where you can freely express your minds and talk with other strangers.\n\n" +
 					"To start the chat, send /go_chat command or press \"New chat\" button\n\n" +
@@ -213,7 +209,7 @@ func BotUpdateLoop(my_bot *tgbotapi.BotAPI, database *sql.DB) {
 				msg.ReplyMarkup = numericKeyboard
 			}
 		case "go_chat":
-			if CheckReg(update.Message.From.ID, database, my_bot) {
+			if CheckUserReg(update.Message.From.ID, database, my_bot) {
 				if IsFree(update.Message.From.ID, database, my_bot) {
 					if !IsSearch(update.Message.From.ID, database, my_bot) {
 						ChangeSearch(database, update.Message.From.ID, 1, my_bot)
@@ -228,7 +224,7 @@ func BotUpdateLoop(my_bot *tgbotapi.BotAPI, database *sql.DB) {
 				msg.Text = "You need to /start first"
 			}
 		case "leave_chat":
-			if CheckReg(update.Message.From.ID, database, my_bot) {
+			if CheckUserReg(update.Message.From.ID, database, my_bot) {
 				if FindChat(update.Message.From.ID, database, my_bot) != 0 {
 					chat_id := FindChat(update.Message.From.ID, database, my_bot)
 					DeleteChat(update.Message.From.ID, database, my_bot)
@@ -295,37 +291,6 @@ func ChatMaker(database *sql.DB, my_bot *tgbotapi.BotAPI) {
 	}
 }
 
-func CheckReg(user_id int, my_db *sql.DB, my_bot *tgbotapi.BotAPI) bool {
-	stmtOut, err := my_db.Prepare("SELECT user_id FROM users_info WHERE user_id = ?")
-	if err != nil {
-		ErrorCatch(err.Error(), my_bot)
-		panic(err.Error())
-	}
-
-	var is_reg int
-	err = stmtOut.QueryRow(user_id).Scan(&is_reg)
-	if err != nil {
-		err = stmtOut.Close()
-		if err != nil {
-			ErrorCatch(err.Error(), my_bot)
-			panic(err.Error())
-		}
-		return false
-	}
-
-	err = stmtOut.Close()
-	if err != nil {
-		ErrorCatch(err.Error(), my_bot)
-		panic(err.Error())
-	}
-
-	if is_reg != 0 {
-		return true
-	} else {
-		return false
-	}
-
-}
 func IsFree(user_id int, my_db *sql.DB, my_bot *tgbotapi.BotAPI) bool {
 	stmtOut, err := my_db.Prepare("SELECT user_free FROM users_info WHERE user_id = ?")
 	if err != nil {
