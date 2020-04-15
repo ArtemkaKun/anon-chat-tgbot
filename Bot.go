@@ -52,84 +52,12 @@ func BotUpdateLoop() {
 				continue
 			}
 
-			if FindChat(update.Message.From.ID, database, my_bot) != 0 {
-				chat_id := FindChat(update.Message.From.ID, database, my_bot)
-				msg := tgbotapi.NewMessage(int64(chat_id), "")
-
-				msg.Text = update.Message.Text
-				if msg.Text != "" {
-					_, err := my_bot.Send(msg)
-					if err != nil {
-						ErrorCatch(err.Error(), my_bot)
-					}
-				} else if update.Message.Photo != nil {
-					photo := tgbotapi.NewPhotoShare(int64(chat_id), "")
-					photo.FileID = (*update.Message.Photo)[2].FileID
-					_, err := my_bot.Send(photo)
-					if err != nil {
-						ErrorCatch(err.Error(), my_bot)
-					}
-				} else if update.Message.Voice != nil {
-					voice := tgbotapi.NewVoiceShare(int64(chat_id), "")
-					voice.FileID = update.Message.Voice.FileID
-					_, err := my_bot.Send(voice)
-					if err != nil {
-						ErrorCatch(err.Error(), my_bot)
-					}
-				} else if update.Message.Animation != nil {
-					voice := tgbotapi.NewAnimationShare(int64(chat_id), "")
-					voice.FileID = update.Message.Animation.FileID
-					_, err := my_bot.Send(voice)
-					if err != nil {
-						ErrorCatch(err.Error(), my_bot)
-					}
-				} else if update.Message.Audio != nil {
-					audio := tgbotapi.NewAudioShare(int64(chat_id), "")
-					audio.FileID = update.Message.Audio.FileID
-					_, err := my_bot.Send(audio)
-					if err != nil {
-						ErrorCatch(err.Error(), my_bot)
-					}
-				} else if update.Message.Sticker != nil {
-					sticker := tgbotapi.NewStickerShare(int64(chat_id), "")
-					sticker.FileID = update.Message.Sticker.FileID
-					_, err := my_bot.Send(sticker)
-					if err != nil {
-						ErrorCatch(err.Error(), my_bot)
-					}
-				} else if update.Message.Document != nil {
-					doc := tgbotapi.NewDocumentShare(int64(chat_id), "")
-					doc.FileID = update.Message.Document.FileID
-					_, err := my_bot.Send(doc)
-					if err != nil {
-						ErrorCatch(err.Error(), my_bot)
-					}
-				} else if update.Message.Video != nil {
-					video := tgbotapi.NewVideoShare(int64(chat_id), "")
-					video.FileID = update.Message.Video.FileID
-					_, err := my_bot.Send(video)
-					if err != nil {
-						ErrorCatch(err.Error(), my_bot)
-					}
-				} else if update.Message.VideoNote != nil {
-					video_note := tgbotapi.NewVideoNoteShare(int64(chat_id), 0, "")
-					video_note.FileID = update.Message.VideoNote.FileID
-					video_note.Length = update.Message.VideoNote.Length
-					_, err := my_bot.Send(video_note)
-					if err != nil {
-						ErrorCatch(err.Error(), my_bot)
-					}
-				} else {
-					msg.Text = "Bot cannot send this yet! Please, contact with creator"
-					_, err := my_bot.Send(msg)
-					if err != nil {
-						ErrorCatch(err.Error(), my_bot)
-					}
-				}
-				continue
-			} else {
+			if FindSecondUserFromChat(update.Message.From.ID) == 0 {
 				continue
 			}
+
+			SendMessageToAnotherUser(update)
+			continue
 		}
 
 		chat_id := update.Message.Chat.ID
@@ -201,6 +129,85 @@ func BotUpdateLoop() {
 	}
 }
 
+func SendMessageToAnotherUser(update tgbotapi.Update) {
+	second_user := FindSecondUserFromChat(update.Message.From.ID)
+
+	msg := tgbotapi.NewMessage(int64(second_user), update.Message.Text)
+
+	if msg.Text != "" {
+		BotSendMessage(msg)
+		return
+	}
+
+	if update.Message.Photo != nil {
+		photo := tgbotapi.NewPhotoShare(int64(second_user), "")
+		photo.FileID = (*update.Message.Photo)[2].FileID
+
+		BotSendPhoto(photo)
+		return
+	}
+
+	if update.Message.Voice != nil {
+		voice := tgbotapi.NewVoiceShare(int64(second_user), "")
+		voice.FileID = update.Message.Voice.FileID
+
+		BotSendVoice(voice)
+		return
+	}
+
+	if update.Message.Animation != nil {
+		gif := tgbotapi.NewAnimationShare(int64(second_user), "")
+		gif.FileID = update.Message.Animation.FileID
+
+		BotSendGif(gif)
+		return
+	}
+
+	if update.Message.Audio != nil {
+		audio := tgbotapi.NewAudioShare(int64(second_user), "")
+		audio.FileID = update.Message.Audio.FileID
+
+		BotSendAudio(audio)
+		return
+	}
+
+	if update.Message.Sticker != nil {
+		sticker := tgbotapi.NewStickerShare(int64(second_user), "")
+		sticker.FileID = update.Message.Sticker.FileID
+
+		BotSendSticker(sticker)
+		return
+	}
+
+	if update.Message.Document != nil {
+		doc := tgbotapi.NewDocumentShare(int64(second_user), "")
+		doc.FileID = update.Message.Document.FileID
+
+		BotSendDoc(doc)
+		return
+	}
+
+	if update.Message.Video != nil {
+		video := tgbotapi.NewVideoShare(int64(second_user), "")
+		video.FileID = update.Message.Video.FileID
+
+		BotSendVideo(video)
+		return
+	}
+
+	if update.Message.VideoNote != nil {
+		video_note := tgbotapi.NewVideoNoteShare(int64(second_user), 0, "")
+		video_note.FileID = update.Message.VideoNote.FileID
+		video_note.Length = update.Message.VideoNote.Length
+
+		BotSendVideoNote(video_note)
+		return
+	}
+
+	msg.Text = "Bot cannot send this yet! Please, contact with creator"
+	BotSendMessage(msg)
+}
+
 func LeaveChatButton(update tgbotapi.Update) {
 	msg := tgbotapi.NewMessage(int64(update.Message.From.ID), "You leaved a chat")
 
@@ -251,6 +258,62 @@ func NewChatButton(update tgbotapi.Update) {
 }
 
 func BotSendMessage(msg tgbotapi.MessageConfig) {
+	_, err := Bot.Send(msg)
+	if err != nil {
+		BotSendMessageError(err)
+	}
+}
+
+func BotSendPhoto(msg tgbotapi.PhotoConfig) {
+	_, err := Bot.Send(msg)
+	if err != nil {
+		BotSendMessageError(err)
+	}
+}
+
+func BotSendVoice(msg tgbotapi.VoiceConfig) {
+	_, err := Bot.Send(msg)
+	if err != nil {
+		BotSendMessageError(err)
+	}
+}
+
+func BotSendGif(msg tgbotapi.AnimationConfig) {
+	_, err := Bot.Send(msg)
+	if err != nil {
+		BotSendMessageError(err)
+	}
+}
+
+func BotSendAudio(msg tgbotapi.AudioConfig) {
+	_, err := Bot.Send(msg)
+	if err != nil {
+		BotSendMessageError(err)
+	}
+}
+
+func BotSendSticker(msg tgbotapi.StickerConfig) {
+	_, err := Bot.Send(msg)
+	if err != nil {
+		BotSendMessageError(err)
+	}
+}
+
+func BotSendDoc(msg tgbotapi.DocumentConfig) {
+	_, err := Bot.Send(msg)
+	if err != nil {
+		BotSendMessageError(err)
+	}
+}
+
+func BotSendVideo(msg tgbotapi.VideoConfig) {
+	_, err := Bot.Send(msg)
+	if err != nil {
+		BotSendMessageError(err)
+	}
+}
+
+func BotSendVideoNote(msg tgbotapi.VideoNoteConfig) {
 	_, err := Bot.Send(msg)
 	if err != nil {
 		BotSendMessageError(err)
