@@ -60,62 +60,21 @@ func BotUpdateLoop() {
 			continue
 		}
 
-		chat_id := update.Message.Chat.ID
-		msg := tgbotapi.NewMessage(chat_id, "")
-
 		switch update.Message.Command() {
 		case "start":
-			StartCommand(update, &msg)
+			StartCommand(update)
 
 		case "go_chat":
-			if !CheckUserReg(update.Message.From.ID) {
-				msg.Text = "You need to /start first"
-			}
-
-			if IsUserChatting(update.Message.From.ID) {
-				msg.Text = "You are chatting already"
-			}
-
-			if IsUserSearching(update.Message.From.ID) {
-				msg.Text = "You are searching already"
-			}
-
-			ChangeSearch(database, update.Message.From.ID, 1, my_bot)
-			msg.Text = "Search started"
+			NewChatButton(update)
 
 		case "leave_chat":
-			if CheckUserReg(update.Message.From.ID, database, my_bot) {
-				if FindChat(update.Message.From.ID, database, my_bot) != 0 {
-					chat_id := FindChat(update.Message.From.ID, database, my_bot)
-					DeleteChat(update.Message.From.ID, database, my_bot)
-					ChangeState(database, update.Message.From.ID, 0, my_bot)
-					msg.Text = "You leaved a chat"
-
-					DeleteChat(chat_id, database, my_bot)
-					ChangeState(database, chat_id, 0, my_bot)
-					_, err := my_bot.Send(tgbotapi.NewMessage(int64(chat_id), "The stranger leave the chat"))
-					if err != nil {
-						ErrorCatch(err.Error(), my_bot)
-					}
-				} else {
-					msg.Text = "You are not chatting now!"
-				}
-			} else {
-				msg.Text = "You need to /start first"
-			}
-		}
-
-		_, err := my_bot.Send(msg)
-		if err != nil {
-			ErrorCatch(err.Error(), my_bot)
+			LeaveChatButton(update)
 		}
 	}
 }
 
-func StartCommand(update tgbotapi.Update, msg *tgbotapi.MessageConfig) {
-	if !CheckUserReg(update.Message.From.ID) {
-		UserFirstStart(update.Message.From.ID)
-	}
+func StartCommand(update tgbotapi.Update) {
+	msg := tgbotapi.NewMessage(int64(update.Message.From.ID), "")
 
 	msg.Text = "Hello, this is Freedom chat, where you can freely express your minds and talk with other strangers.\n\n" +
 		"To start the chat, send /go_chat command or press \"New chat\" button\n\n" +
@@ -125,6 +84,12 @@ func StartCommand(update tgbotapi.Update, msg *tgbotapi.MessageConfig) {
 		"If You have some questions or suggestions, please, feel free to contact with me, @YUART\n\n" +
 		"Also, check my Patreon page (https://www.patreon.com/artemkakun) if you want receive some bonuses from me :)\n"
 	msg.ReplyMarkup = chatControlKeyboard
+
+	defer BotSendMessage(msg)
+
+	if !CheckUserReg(update.Message.From.ID) {
+		UserFirstStart(update.Message.From.ID)
+	}
 }
 
 func SendMessageToAnotherUser(update tgbotapi.Update) {
