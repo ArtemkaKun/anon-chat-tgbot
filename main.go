@@ -1,50 +1,54 @@
 package main
 
 import (
+	"github.com/Syfaro/telegram-bot-api"
 	"math/rand"
 	"time"
 )
 
 func main() {
-	//go ChatMaker(my_db, bot)
+	go ChatMaker()
 	BotUpdateLoop()
 }
 
 func ChatMaker() {
 	for true {
-		free_users := FindFree(database, my_bot)
+		free_users := FindFreeUsers()
 		users_amount := len(free_users)
+
 		if users_amount > 1 {
 			rand.Seed(time.Now().UnixNano())
-			first_user := rand.Intn(users_amount)
-			second_user := rand.Intn(users_amount)
+			user_one := rand.Intn(users_amount)
+			user_two := rand.Intn(users_amount)
 
-			for second_user == first_user {
-				second_user = rand.Intn(users_amount)
+			for user_two == user_one {
+				user_two = rand.Intn(users_amount)
 			}
 
-			ChangeSearch(database, free_users[first_user], 0, my_bot)
-			ChangeSearch(database, free_users[second_user], 0, my_bot)
-			ChangeState(database, free_users[first_user], 1, my_bot)
-			ChangeState(database, free_users[second_user], 1, my_bot)
-			AddChat(free_users[first_user], free_users[second_user], database, my_bot)
-			AddChat(free_users[second_user], free_users[first_user], database, my_bot)
+			first_user := free_users[user_one]
+			second_user := free_users[user_two]
 
-			msg := tgbotapi.NewMessage(int64(free_users[first_user]), "")
-			msg.Text = "Now you can chat"
-			_, err := my_bot.Send(msg)
-			if err != nil {
-				ErrorCatch(err.Error(), my_bot)
-			}
+			MakeChat(first_user, second_user)
 
-			msg = tgbotapi.NewMessage(int64(free_users[second_user]), "")
-			msg.Text = "Now you can chat"
-			_, err = my_bot.Send(msg)
-			if err != nil {
-				ErrorCatch(err.Error(), my_bot)
-			}
+			msg := tgbotapi.NewMessage(int64(first_user), "Now you can chat")
+			BotSendMessage(msg)
+
+			msg = tgbotapi.NewMessage(int64(second_user), "Now you can chat")
+			BotSendMessage(msg)
 		}
+
 		amt := time.Duration(1000)
 		time.Sleep(time.Millisecond * amt)
 	}
+}
+
+func MakeChat(first_user int, second_user int) {
+	ChangeUserSearchingState(first_user, false)
+	ChangeUserSearchingState(second_user, false)
+
+	ChangeUserChattingState(first_user, true)
+	ChangeUserChattingState(second_user, true)
+
+	AddNewChat(first_user, second_user)
+	AddNewChat(second_user, first_user)
 }
