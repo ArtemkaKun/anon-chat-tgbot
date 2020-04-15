@@ -1,8 +1,8 @@
 package main
 
 import (
+	"database/sql"
 	"github.com/Syfaro/telegram-bot-api"
-	_ "github.com/go-sql-driver/mysql"
 	"log"
 	"math/rand"
 	"time"
@@ -193,7 +193,7 @@ func BotUpdateLoop(my_bot *tgbotapi.BotAPI, database *sql.DB) {
 		switch update.Message.Command() {
 		case "start":
 			if !CheckReg(update.Message.From.ID, database, my_bot) {
-				FirstStart(update.Message.From.ID, database, my_bot)
+				UserFirstStart(update.Message.From.ID, database, my_bot)
 				msg.Text = "Hello, this is Freedom chat, where you can freely express your minds and talk with other strangers.\n\n" +
 					"To start the chat, send /go_chat command or press \"New chat\" button\n\n" +
 					"To leave the chat, send /leave_chat command or press \"Leave chat\" button\n\n" +
@@ -294,37 +294,7 @@ func ChatMaker(database *sql.DB, my_bot *tgbotapi.BotAPI) {
 		time.Sleep(time.Millisecond * amt)
 	}
 }
-func DBStart() *sql.DB {
-	my_db, err := sql.Open("mysql", "root:db_pass_here@/anonstudchat")
-	if err != nil {
-		log.Panic(err)
-	} else {
-		err = my_db.Ping()
-		if err != nil {
-			log.Panic(err)
-		}
-	}
-	return my_db
-}
-func FirstStart(user_id int, my_db *sql.DB, my_bot *tgbotapi.BotAPI) {
-	stmtIns, err := my_db.Prepare("INSERT INTO users_info VALUES (?, ?, ?)")
-	if err != nil {
-		ErrorCatch(err.Error(), my_bot)
-		panic(err.Error())
-	}
 
-	_, err = stmtIns.Exec(user_id, 0, 0)
-	if err != nil {
-		ErrorCatch(err.Error(), my_bot)
-		panic(err.Error())
-	}
-
-	err = stmtIns.Close()
-	if err != nil {
-		ErrorCatch(err.Error(), my_bot)
-		panic(err.Error())
-	}
-}
 func CheckReg(user_id int, my_db *sql.DB, my_bot *tgbotapi.BotAPI) bool {
 	stmtOut, err := my_db.Prepare("SELECT user_id FROM users_info WHERE user_id = ?")
 	if err != nil {
