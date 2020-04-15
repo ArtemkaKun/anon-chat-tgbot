@@ -174,7 +174,7 @@ func DBScanError(err error) {
 }
 
 func DBQueryError(err error) {
-	fmt.Println(fmt.Errorf("QueryRow failed: %w\n", err))
+	fmt.Println(fmt.Errorf("QueryRow failed: %v \n", err))
 }
 
 func DBConnectionError(err error) {

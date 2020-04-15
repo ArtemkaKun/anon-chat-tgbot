@@ -8,15 +8,22 @@ import (
 
 var Bot *tgbotapi.BotAPI
 
-var chatControlKeyboard = tgbotapi.NewReplyKeyboard(
+var chatControlKeyboardUS = tgbotapi.NewReplyKeyboard(
 	tgbotapi.NewKeyboardButtonRow(
 		tgbotapi.NewKeyboardButton("New chat"),
 		tgbotapi.NewKeyboardButton("Leave chat"),
 	),
 )
 
+var chatControlKeyboardRU = tgbotapi.NewReplyKeyboard(
+	tgbotapi.NewKeyboardButtonRow(
+		tgbotapi.NewKeyboardButton("Начать чат"),
+		tgbotapi.NewKeyboardButton("Покинуть чат"),
+	),
+)
+
 func init() {
-	bot, err := tgbotapi.NewBotAPI("NEW BOT TOKEN HERE")
+	bot, err := tgbotapi.NewBotAPI("1022122500:AAFy8sDJFUlgw0e7JURelghBPv_is5kG7ck")
 	if err != nil {
 		BotInitError(err)
 	}
@@ -76,14 +83,25 @@ func BotUpdateLoop() {
 func StartCommand(update tgbotapi.Update) {
 	msg := tgbotapi.NewMessage(int64(update.Message.From.ID), "")
 
-	msg.Text = "Hello, this is Freedom chat, where you can freely express your minds and talk with other strangers.\n\n" +
-		"To start the chat, send /go_chat command or press \"New chat\" button\n\n" +
-		"To leave the chat, send /leave_chat command or press \"Leave chat\" button\n\n" +
-		"Bot doesn't store any personal data, so chats are fully anonymous.\n\n" +
-		"If You want to check how the bot works - check my video (https://www.youtube.com/watch?v=drtAdOByW54&t=1s)\n\n" +
-		"If You have some questions or suggestions, please, feel free to contact with me, @YUART\n\n" +
-		"Also, check my Patreon page (https://www.patreon.com/artemkakun) if you want receive some bonuses from me :)\n"
-	msg.ReplyMarkup = chatControlKeyboard
+	if update.Message.From.LanguageCode == "ru" || update.Message.From.LanguageCode == "ua" {
+		msg.Text = "Привет, это Freenon чат - анонимный чат, где ты можешь высказывать свои мысли без последствий\n\n" +
+			"Чтобы начать чат с незнакомцем, введи команду /go_chat или нажми кнопку \"Начать чат\"\n\n" +
+			"Чтобы покинуть чат, введи команду /leave_chat или нажми кнопку \"Покинуть чат\"\n\n" +
+			"Бот не сохраняет данные о пользователях, так что твои личные данные в безопасности.\n\n" +
+			"Если ты хочешь посмотреть, как работает бот - вот мое видео (https://www.youtube.com/watch?v=drtAdOByW54&t=1s)\n\n" +
+			"Если у тебя есть вопросы или предложения, пожалуйста, свяжись со мной, @YUART\n\n" +
+			"Еще можешь зайти на мою страницу Parteon (https://www.patreon.com/artemkakun) - мне будет приятно :)\n"
+		msg.ReplyMarkup = chatControlKeyboardRU
+	} else {
+		msg.Text = "Hello, this is Freedom chat, where you can freely express your minds and talk with other strangers.\n\n" +
+			"To start the chat, send /go_chat command or press \"New chat\" button\n\n" +
+			"To leave the chat, send /leave_chat command or press \"Leave chat\" button\n\n" +
+			"Bot doesn't store any personal data, so chats are fully anonymous.\n\n" +
+			"If You want to check how the bot works - check my video (https://www.youtube.com/watch?v=drtAdOByW54&t=1s)\n\n" +
+			"If You have some questions or suggestions, please, feel free to contact with me, @YUART\n\n" +
+			"Also, check my Patreon page (https://www.patreon.com/artemkakun) if you want receive some bonuses from me :)\n"
+		msg.ReplyMarkup = chatControlKeyboardUS
+	}
 
 	defer BotSendMessage(msg)
 
@@ -104,7 +122,7 @@ func SendMessageToAnotherUser(update tgbotapi.Update) {
 
 	if update.Message.Photo != nil {
 		photo := tgbotapi.NewPhotoShare(int64(second_user), "")
-		photo.FileID = (*update.Message.Photo)[2].FileID
+		photo.FileID = (*update.Message.Photo)[1].FileID
 
 		BotSendPhoto(photo)
 		return
@@ -167,24 +185,30 @@ func SendMessageToAnotherUser(update tgbotapi.Update) {
 		return
 	}
 
-	msg.Text = "Bot cannot send this yet! Please, contact with creator"
+	if update.Message.From.LanguageCode == "ru" || update.Message.From.LanguageCode == "ua" {
+		msg.Text = "Бот не может это отправить. Пожалуйста, свяжитесь с администрацией"
+	} else {
+		msg.Text = "Bot cannot send this yet! Please, contact with creator"
+	}
 	BotSendMessage(msg)
 }
 
 func LeaveChatButton(update tgbotapi.Update) {
 	msg := tgbotapi.NewMessage(int64(update.Message.From.ID), "You leaved a chat")
 
-	defer BotSendMessage(msg)
+	if update.Message.From.LanguageCode == "ru" || update.Message.From.LanguageCode == "ua" {
+		msg = tgbotapi.NewMessage(int64(update.Message.From.ID), "Вы покинули чат")
+	}
 
 	if !CheckUserReg(update.Message.From.ID) {
-		msg.Text = "You need /start first"
+		BadRegistration(msg, update)
 		return
 	}
 
 	second_user := FindSecondUserFromChat(update.Message.From.ID)
 
 	if second_user == 0 {
-		msg.Text = "You are not chatting now!"
+		NotChatting(msg, update)
 		return
 	}
 
@@ -194,30 +218,70 @@ func LeaveChatButton(update tgbotapi.Update) {
 	DeleteChat(second_user)
 	ChangeUserChattingState(second_user, false)
 
+	BotSendMessage(msg)
 	BotSendMessage(tgbotapi.NewMessage(int64(second_user), "The stranger leave the chat"))
 }
 
 func NewChatButton(update tgbotapi.Update) {
 	msg := tgbotapi.NewMessage(int64(update.Message.From.ID), "Search started")
 
-	defer BotSendMessage(msg)
+	if update.Message.From.LanguageCode == "ru" || update.Message.From.LanguageCode == "ua" {
+		msg = tgbotapi.NewMessage(int64(update.Message.From.ID), "Поиск начался")
+	}
 
 	if !CheckUserReg(update.Message.From.ID) {
-		msg.Text = "You need /start first"
+		BadRegistration(msg, update)
 		return
 	}
 
 	if IsUserChatting(update.Message.From.ID) {
-		msg.Text = "You are chatting already"
+		AlreadyChatting(msg, update)
 		return
 	}
 
 	if IsUserSearching(update.Message.From.ID) {
-		msg.Text = "You are searching already"
+		AlreadySearching(msg, update)
 		return
 	}
 
 	ChangeUserSearchingState(update.Message.From.ID, true)
+	BotSendMessage(msg)
+}
+
+func AlreadySearching(msg tgbotapi.MessageConfig, update tgbotapi.Update) {
+	msg.Text = "You are searching already"
+	if update.Message.From.LanguageCode == "ru" || update.Message.From.LanguageCode == "ua" {
+		msg.Text = "Вы уже ищите чат"
+	}
+
+	BotSendMessage(msg)
+}
+
+func AlreadyChatting(msg tgbotapi.MessageConfig, update tgbotapi.Update) {
+	msg.Text = "You are chatting already"
+	if update.Message.From.LanguageCode == "ru" || update.Message.From.LanguageCode == "ua" {
+		msg.Text = "Вы уже в чате"
+	}
+
+	BotSendMessage(msg)
+}
+
+func BadRegistration(msg tgbotapi.MessageConfig, update tgbotapi.Update) {
+	msg.Text = "You need /start first"
+	if update.Message.From.LanguageCode == "ru" || update.Message.From.LanguageCode == "ua" {
+		msg.Text = "Используйте /start сначала"
+	}
+
+	BotSendMessage(msg)
+}
+
+func NotChatting(msg tgbotapi.MessageConfig, update tgbotapi.Update) {
+	msg.Text = "You are not chatting now!"
+	if update.Message.From.LanguageCode == "ru" || update.Message.From.LanguageCode == "ua" {
+		msg.Text = "Вы не находитесь в чате"
+	}
+
+	BotSendMessage(msg)
 }
 
 func BotSendMessage(msg tgbotapi.MessageConfig) {
