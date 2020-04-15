@@ -285,35 +285,6 @@ func main() {
 //	}
 //}
 //
-//func IsSearch(user_id int, my_db *sql.DB, my_bot *tgbotapi.BotAPI) bool {
-//	stmtOut, err := my_db.Prepare("SELECT is_search FROM users_info WHERE user_id = ?")
-//	if err != nil {
-//		ErrorCatch(err.Error(), my_bot)
-//		panic(err.Error())
-//	}
-//
-//	var is_free int
-//	err = stmtOut.QueryRow(user_id).Scan(&is_free)
-//	if err != nil {
-//		err = stmtOut.Close()
-//		if err != nil {
-//			ErrorCatch(err.Error(), my_bot)
-//			panic(err.Error())
-//		}
-//		return false
-//	}
-//
-//	err = stmtOut.Close()
-//	if err != nil {
-//		ErrorCatch(err.Error(), my_bot)
-//		panic(err.Error())
-//	}
-//
-//	if is_free == 1 {
-//		return true
-//	} else {
-//		return false
-//	}
 //
 //}
 //func FindFree(my_db *sql.DB, my_bot *tgbotapi.BotAPI) []int {
@@ -350,25 +321,6 @@ func main() {
 //}
 //func ChangeSearch(my_db *sql.DB, user_id int, status int, my_bot *tgbotapi.BotAPI) {
 //	stmtIns, err := my_db.Prepare("UPDATE users_info SET is_search = ? WHERE user_id = ?")
-//	if err != nil {
-//		ErrorCatch(err.Error(), my_bot)
-//		panic(err.Error())
-//	}
-//
-//	_, err = stmtIns.Exec(status, user_id)
-//	if err != nil {
-//		ErrorCatch(err.Error(), my_bot)
-//		panic(err.Error())
-//	}
-//
-//	err = stmtIns.Close()
-//	if err != nil {
-//		ErrorCatch(err.Error(), my_bot)
-//		panic(err.Error())
-//	}
-//}
-//func ChangeState(my_db *sql.DB, user_id int, status int, my_bot *tgbotapi.BotAPI) {
-//	stmtIns, err := my_db.Prepare("UPDATE users_info SET user_free = ? WHERE user_id = ?")
 //	if err != nil {
 //		ErrorCatch(err.Error(), my_bot)
 //		panic(err.Error())

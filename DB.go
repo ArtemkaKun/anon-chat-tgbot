@@ -72,6 +72,39 @@ func ChangeUserChattingState(user_id int, status bool) {
 	}
 }
 
+func IsUserSearching(user_id int) bool {
+	searchStatus, err := DBConnection.Query(context.Background(), "SELECT is_searching FROM public.users WHERE user_id = $1",
+		user_id)
+	if err != nil {
+		DBQueryError(err)
+	}
+
+	defer searchStatus.Close()
+
+	var is_search bool
+
+	for searchStatus.Next() {
+		err := searchStatus.Scan(&is_search)
+		if err != nil {
+			DBScanError(err)
+		}
+	}
+
+	if searchStatus.Err() != nil {
+		DBQueryError(err)
+	}
+
+	return is_search
+}
+
+func ChangeUserSearchingState(user_id int, status bool) {
+	_, err := DBConnection.Exec(context.Background(), "UPDATE public.users SET is_searching = $2 WHERE user_id = $1",
+		user_id, status)
+	if err != nil {
+		DBQueryError(err)
+	}
+}
+
 func DBScanError(err error) {
 	fmt.Println(fmt.Errorf("Scan failed: %w\n", err))
 }
