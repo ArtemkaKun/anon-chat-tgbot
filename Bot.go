@@ -23,7 +23,7 @@ var chatControlKeyboardRU = tgbotapi.NewReplyKeyboard(
 )
 
 func init() {
-	bot, err := tgbotapi.NewBotAPI("1022122500:AAFy8sDJFUlgw0e7JURelghBPv_is5kG7ck")
+	bot, err := tgbotapi.NewBotAPI("")
 	if err != nil {
 		BotInitError(err)
 	}
