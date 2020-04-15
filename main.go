@@ -1,7 +1,6 @@
 package main
 
 import (
-	"database/sql"
 	"github.com/Syfaro/telegram-bot-api"
 	_ "github.com/go-sql-driver/mysql"
 	"log"
@@ -9,7 +8,7 @@ import (
 	"time"
 )
 
-const ADMIN int64 = admin_id_here;
+const ADMIN int64 = admin_id_here
 
 func main() {
 	bot := BotStart()
@@ -168,7 +167,7 @@ func BotUpdateLoop(my_bot *tgbotapi.BotAPI, database *sql.DB) {
 						ErrorCatch(err.Error(), my_bot)
 					}
 				} else if update.Message.VideoNote != nil {
-					video_note := tgbotapi.NewVideoNoteShare(int64(chat_id),0, "")
+					video_note := tgbotapi.NewVideoNoteShare(int64(chat_id), 0, "")
 					video_note.FileID = update.Message.VideoNote.FileID
 					video_note.Length = update.Message.VideoNote.Length
 					_, err := my_bot.Send(video_note)
