@@ -287,26 +287,6 @@ func main() {
 //
 //
 //}
-
-//func DeleteChat(user_id int, my_db *sql.DB, my_bot *tgbotapi.BotAPI) {
-//	stmtIns, err := my_db.Prepare("DELETE FROM chat_buffer WHERE first_user = ?")
-//	if err != nil {
-//		ErrorCatch(err.Error(), my_bot)
-//		panic(err.Error())
-//	}
-//
-//	_, err = stmtIns.Exec(user_id)
-//	if err != nil {
-//		ErrorCatch(err.Error(), my_bot)
-//		panic(err.Error())
-//	}
-//
-//	err = stmtIns.Close()
-//	if err != nil {
-//		ErrorCatch(err.Error(), my_bot)
-//		panic(err.Error())
-//	}
-//}
 //
 //func ErrorCatch(err string, my_bot *tgbotapi.BotAPI) {
 //	msg := tgbotapi.NewMessage(ADMIN, err)

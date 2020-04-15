@@ -161,6 +161,14 @@ func FindSecondUserFromChat(user_id int) int {
 	return second_user
 }
 
+func DeleteChat(user_id int) {
+	_, err := DBConnection.Exec(context.Background(), "DELETE FROM public.chats WHERE first_user = $1",
+		user_id)
+	if err != nil {
+		DBQueryError(err)
+	}
+}
+
 func DBScanError(err error) {
 	fmt.Println(fmt.Errorf("Scan failed: %w\n", err))
 }

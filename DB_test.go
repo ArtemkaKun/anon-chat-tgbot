@@ -106,6 +106,15 @@ func TestFindSecondUserFromChat(t *testing.T) {
 	}
 }
 
+func TestDeleteChat(t *testing.T) {
+	DeleteChat(1)
+	DeleteChat(3)
+
+	if FindSecondUserFromChat(5) != 7 {
+		t.Errorf("Expected %v, got %v", 7, 0)
+	}
+}
+
 func InsertNewCases(new_cases []int) {
 	for _, one_case := range new_cases {
 		UserFirstStart(one_case)
