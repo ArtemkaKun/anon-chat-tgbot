@@ -145,7 +145,7 @@ func FindSecondUserFromChat(user_id int) int {
 
 	defer next_chat_user.Close()
 
-	var second_user int
+	var second_user = 0
 
 	for next_chat_user.Next() {
 		err := next_chat_user.Scan(&second_user)

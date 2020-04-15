@@ -48,32 +48,7 @@ func BotUpdateLoop() {
 				continue
 
 			case "Leave chat":
-				msg := tgbotapi.NewMessage(int64(update.Message.From.ID), "")
-
-				if CheckUserReg(update.Message.From.ID, database, my_bot) {
-					if FindChat(update.Message.From.ID, database, my_bot) != 0 {
-						chat_id := FindChat(update.Message.From.ID, database, my_bot)
-						DeleteChat(update.Message.From.ID, database, my_bot)
-						ChangeState(database, update.Message.From.ID, 0, my_bot)
-						msg.Text = "You leaved a chat"
-
-						DeleteChat(chat_id, database, my_bot)
-						ChangeState(database, chat_id, 0, my_bot)
-						_, err := my_bot.Send(tgbotapi.NewMessage(int64(chat_id), "The stranger leave the chat"))
-						if err != nil {
-							ErrorCatch(err.Error(), my_bot)
-						}
-					} else {
-						msg.Text = "You are not chatting now!"
-					}
-				} else {
-					msg.Text = "You need to /start first"
-				}
-
-				_, err := my_bot.Send(msg)
-				if err != nil {
-					ErrorCatch(err.Error(), my_bot)
-				}
+				LeaveChatButton(update)
 				continue
 			}
 
@@ -224,6 +199,32 @@ func BotUpdateLoop() {
 			ErrorCatch(err.Error(), my_bot)
 		}
 	}
+}
+
+func LeaveChatButton(update tgbotapi.Update) {
+	msg := tgbotapi.NewMessage(int64(update.Message.From.ID), "You leaved a chat")
+
+	defer BotSendMessage(msg)
+
+	if !CheckUserReg(update.Message.From.ID) {
+		msg.Text = "You need /start first"
+		return
+	}
+
+	second_user := FindSecondUserFromChat(update.Message.From.ID)
+
+	if second_user == 0 {
+		msg.Text = "You are not chatting now!"
+		return
+	}
+
+	DeleteChat(update.Message.From.ID)
+	ChangeUserChattingState(update.Message.From.ID, false)
+
+	DeleteChat(second_user)
+	ChangeUserChattingState(second_user, false)
+
+	BotSendMessage(tgbotapi.NewMessage(int64(second_user), "The stranger leave the chat"))
 }
 
 func NewChatButton(update tgbotapi.Update) {
