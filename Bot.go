@@ -1,7 +1,6 @@
 package main
 
 import (
-	"database/sql"
 	"fmt"
 	"github.com/Syfaro/telegram-bot-api"
 	"log"
@@ -23,15 +22,17 @@ func init() {
 	}
 
 	log.Printf("Autorised on account %s", bot.Self.UserName)
+
+	Bot = bot
 }
 
-func BotUpdateLoop(my_bot *tgbotapi.BotAPI, database *sql.DB) {
+func BotUpdateLoop() {
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
 
-	updates, err := my_bot.GetUpdatesChan(u)
+	updates, err := Bot.GetUpdatesChan(u)
 	if err != nil {
-		log.Panic(err)
+		BotInitError(err)
 	}
 
 	for update := range updates {
@@ -43,27 +44,7 @@ func BotUpdateLoop(my_bot *tgbotapi.BotAPI, database *sql.DB) {
 		if !update.Message.IsCommand() {
 			switch update.Message.Text {
 			case "New chat":
-				msg := tgbotapi.NewMessage(int64(update.Message.From.ID), "")
-
-				if CheckUserReg(update.Message.From.ID, database, my_bot) {
-					if IsFree(update.Message.From.ID, database, my_bot) {
-						if !IsSearch(update.Message.From.ID, database, my_bot) {
-							ChangeSearch(database, update.Message.From.ID, 1, my_bot)
-							msg.Text = "Search started"
-						} else {
-							msg.Text = "You are searching already"
-						}
-					} else {
-						msg.Text = "You are chatting already"
-					}
-				} else {
-					msg.Text = "You need /start first"
-				}
-
-				_, err := my_bot.Send(msg)
-				if err != nil {
-					ErrorCatch(err.Error(), my_bot)
-				}
+				NewChatButton(update)
 				continue
 
 			case "Leave chat":
@@ -245,7 +226,41 @@ func BotUpdateLoop(my_bot *tgbotapi.BotAPI, database *sql.DB) {
 	}
 }
 
+func NewChatButton(update tgbotapi.Update) {
+	msg := tgbotapi.NewMessage(int64(update.Message.From.ID), "Search started")
+
+	defer BotSendMessage(msg)
+
+	if !CheckUserReg(update.Message.From.ID) {
+		msg.Text = "You need /start first"
+		return
+	}
+
+	if IsUserChatting(update.Message.From.ID) {
+		msg.Text = "You are chatting already"
+		return
+	}
+
+	if IsUserSearching(update.Message.From.ID) {
+		msg.Text = "You are searching already"
+		return
+	}
+
+	ChangeUserSearchingState(update.Message.From.ID, true)
+}
+
+func BotSendMessage(msg tgbotapi.MessageConfig) {
+	_, err := Bot.Send(msg)
+	if err != nil {
+		BotSendMessageError(err)
+	}
+}
+
+func BotSendMessageError(err error) {
+	fmt.Println(fmt.Errorf("Send message failed: %w\n", err))
+}
+
 func BotInitError(err error) {
-	fmt.Println(fmt.Errorf("QueryRow failed: %w\n", err))
+	fmt.Println(fmt.Errorf("Bot initialization failed: %w\n", err))
 	panic(err)
 }
