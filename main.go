@@ -285,37 +285,6 @@ func main() {
 //	}
 //}
 //
-//func IsFree(user_id int, my_db *sql.DB, my_bot *tgbotapi.BotAPI) bool {
-//	stmtOut, err := my_db.Prepare("SELECT user_free FROM users_info WHERE user_id = ?")
-//	if err != nil {
-//		ErrorCatch(err.Error(), my_bot)
-//		panic(err.Error())
-//	}
-//
-//	var is_free int
-//	err = stmtOut.QueryRow(user_id).Scan(&is_free)
-//	if err != nil {
-//		err = stmtOut.Close()
-//		if err != nil {
-//			ErrorCatch(err.Error(), my_bot)
-//			panic(err.Error())
-//		}
-//		return false
-//	}
-//
-//	err = stmtOut.Close()
-//	if err != nil {
-//		ErrorCatch(err.Error(), my_bot)
-//		panic(err.Error())
-//	}
-//
-//	if is_free == 0 {
-//		return true
-//	} else {
-//		return false
-//	}
-//
-//}
 //func IsSearch(user_id int, my_db *sql.DB, my_bot *tgbotapi.BotAPI) bool {
 //	stmtOut, err := my_db.Prepare("SELECT is_search FROM users_info WHERE user_id = ?")
 //	if err != nil {

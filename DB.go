@@ -39,6 +39,43 @@ func CheckUserReg(user_id int) bool {
 	return regStatus.Next()
 }
 
+func IsUserChatting(user_id int) bool {
+	chatStatus, err := DBConnection.Query(context.Background(), "SELECT is_chatting FROM public.users WHERE user_id = $1",
+		user_id)
+	if err != nil {
+		DBQueryError(err)
+	}
+
+	defer chatStatus.Close()
+
+	var is_chat bool
+
+	for chatStatus.Next() {
+		err := chatStatus.Scan(&is_chat)
+		if err != nil {
+			DBScanError(err)
+		}
+	}
+
+	if chatStatus.Err() != nil {
+		DBQueryError(err)
+	}
+
+	return is_chat
+}
+
+func ChangeUserChattingState(user_id int, status bool) {
+	_, err := DBConnection.Exec(context.Background(), "UPDATE public.users SET is_chatting = $2 WHERE user_id = $1",
+		user_id, status)
+	if err != nil {
+		DBQueryError(err)
+	}
+}
+
+func DBScanError(err error) {
+	fmt.Println(fmt.Errorf("Scan failed: %w\n", err))
+}
+
 func DBQueryError(err error) {
 	fmt.Println(fmt.Errorf("QueryRow failed: %w\n", err))
 }
