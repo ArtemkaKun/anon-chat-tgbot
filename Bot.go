@@ -65,41 +65,24 @@ func BotUpdateLoop() {
 
 		switch update.Message.Command() {
 		case "start":
-			if !CheckUserReg(update.Message.From.ID, database, my_bot) {
-				UserFirstStart(update.Message.From.ID, database, my_bot)
-				msg.Text = "Hello, this is Freedom chat, where you can freely express your minds and talk with other strangers.\n\n" +
-					"To start the chat, send /go_chat command or press \"New chat\" button\n\n" +
-					"To leave the chat, send /leave_chat command or press \"Leave chat\" button\n\n" +
-					"Bot doesn't store any personal data, so chats are fully anonymous.\n\n" +
-					"If You want to check how the bot works - check my video (https://www.youtube.com/watch?v=drtAdOByW54&t=1s)\n\n" +
-					"If You have some questions or suggestions, please, feel free to contact with me, @YUART\n\n" +
-					"Also, check my Patreon page (https://www.patreon.com/artemkakun) if you want receive some bonuses from me :)\n"
-				msg.ReplyMarkup = numericKeyboard
-			} else {
-				msg.Text = "Hello, this is Freedom chat, where you can freely express your minds and talk with other strangers.\n\n" +
-					"To start the chat, send /go_chat command or press \"New chat\" button\n\n" +
-					"To leave the chat, send /leave_chat command or press \"Leave chat\" button\n\n" +
-					"Bot doesn't store any personal data, so chats are fully anonymous.\n\n" +
-					"If You want to check how the bot works - check my video (https://www.youtube.com/watch?v=drtAdOByW54&t=1s)\n\n" +
-					"If You have some questions or suggestions, please, feel free to contact with me, @YUART\n\n" +
-					"Also, check my Patreon page (https://www.patreon.com/artemkakun) if you want receive some bonuses from me :)\n"
-				msg.ReplyMarkup = numericKeyboard
-			}
+			StartCommand(update, &msg)
+
 		case "go_chat":
-			if CheckUserReg(update.Message.From.ID, database, my_bot) {
-				if IsFree(update.Message.From.ID, database, my_bot) {
-					if !IsSearch(update.Message.From.ID, database, my_bot) {
-						ChangeSearch(database, update.Message.From.ID, 1, my_bot)
-						msg.Text = "Search started"
-					} else {
-						msg.Text = "You are searching already"
-					}
-				} else {
-					msg.Text = "You are chatting already"
-				}
-			} else {
+			if !CheckUserReg(update.Message.From.ID) {
 				msg.Text = "You need to /start first"
 			}
+
+			if IsUserChatting(update.Message.From.ID) {
+				msg.Text = "You are chatting already"
+			}
+
+			if IsUserSearching(update.Message.From.ID) {
+				msg.Text = "You are searching already"
+			}
+
+			ChangeSearch(database, update.Message.From.ID, 1, my_bot)
+			msg.Text = "Search started"
+
 		case "leave_chat":
 			if CheckUserReg(update.Message.From.ID, database, my_bot) {
 				if FindChat(update.Message.From.ID, database, my_bot) != 0 {
@@ -127,6 +110,21 @@ func BotUpdateLoop() {
 			ErrorCatch(err.Error(), my_bot)
 		}
 	}
+}
+
+func StartCommand(update tgbotapi.Update, msg *tgbotapi.MessageConfig) {
+	if !CheckUserReg(update.Message.From.ID) {
+		UserFirstStart(update.Message.From.ID)
+	}
+
+	msg.Text = "Hello, this is Freedom chat, where you can freely express your minds and talk with other strangers.\n\n" +
+		"To start the chat, send /go_chat command or press \"New chat\" button\n\n" +
+		"To leave the chat, send /leave_chat command or press \"Leave chat\" button\n\n" +
+		"Bot doesn't store any personal data, so chats are fully anonymous.\n\n" +
+		"If You want to check how the bot works - check my video (https://www.youtube.com/watch?v=drtAdOByW54&t=1s)\n\n" +
+		"If You have some questions or suggestions, please, feel free to contact with me, @YUART\n\n" +
+		"Also, check my Patreon page (https://www.patreon.com/artemkakun) if you want receive some bonuses from me :)\n"
+	msg.ReplyMarkup = chatControlKeyboard
 }
 
 func SendMessageToAnotherUser(update tgbotapi.Update) {
