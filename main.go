@@ -287,57 +287,7 @@ func main() {
 //
 //
 //}
-//func FindFree(my_db *sql.DB, my_bot *tgbotapi.BotAPI) []int {
-//	stmtOut, err := my_db.Query("SELECT user_id FROM users_info WHERE user_free = 0 AND is_search = 1")
-//	if err != nil {
-//		ErrorCatch(err.Error(), my_bot)
-//		panic(err.Error())
-//	}
-//
-//	var user_free []int
-//	var one_user int
-//
-//	for stmtOut.Next() {
-//		err = stmtOut.Scan(&one_user)
-//		if err != nil {
-//			err = stmtOut.Close()
-//			if err != nil {
-//				ErrorCatch(err.Error(), my_bot)
-//				panic(err.Error())
-//			}
-//			user_free = append(user_free, 0)
-//			return user_free
-//		}
-//		user_free = append(user_free, one_user)
-//	}
-//
-//	err = stmtOut.Close()
-//	if err != nil {
-//		ErrorCatch(err.Error(), my_bot)
-//		panic(err.Error())
-//	}
-//
-//	return user_free
-//}
-//func ChangeSearch(my_db *sql.DB, user_id int, status int, my_bot *tgbotapi.BotAPI) {
-//	stmtIns, err := my_db.Prepare("UPDATE users_info SET is_search = ? WHERE user_id = ?")
-//	if err != nil {
-//		ErrorCatch(err.Error(), my_bot)
-//		panic(err.Error())
-//	}
-//
-//	_, err = stmtIns.Exec(status, user_id)
-//	if err != nil {
-//		ErrorCatch(err.Error(), my_bot)
-//		panic(err.Error())
-//	}
-//
-//	err = stmtIns.Close()
-//	if err != nil {
-//		ErrorCatch(err.Error(), my_bot)
-//		panic(err.Error())
-//	}
-//}
+
 //func AddChat(first_user_id int, second_user_id int, my_db *sql.DB, my_bot *tgbotapi.BotAPI) {
 //	stmtIns, err := my_db.Prepare("INSERT INTO chat_buffer VALUES (?, ?)")
 //	if err != nil {

@@ -40,24 +40,24 @@ func CheckUserReg(user_id int) bool {
 }
 
 func IsUserChatting(user_id int) bool {
-	chatStatus, err := DBConnection.Query(context.Background(), "SELECT is_chatting FROM public.users WHERE user_id = $1",
+	chat_status, err := DBConnection.Query(context.Background(), "SELECT is_chatting FROM public.users WHERE user_id = $1",
 		user_id)
 	if err != nil {
 		DBQueryError(err)
 	}
 
-	defer chatStatus.Close()
+	defer chat_status.Close()
 
 	var is_chat bool
 
-	for chatStatus.Next() {
-		err := chatStatus.Scan(&is_chat)
+	for chat_status.Next() {
+		err := chat_status.Scan(&is_chat)
 		if err != nil {
 			DBScanError(err)
 		}
 	}
 
-	if chatStatus.Err() != nil {
+	if chat_status.Err() != nil {
 		DBQueryError(err)
 	}
 
@@ -73,24 +73,24 @@ func ChangeUserChattingState(user_id int, status bool) {
 }
 
 func IsUserSearching(user_id int) bool {
-	searchStatus, err := DBConnection.Query(context.Background(), "SELECT is_searching FROM public.users WHERE user_id = $1",
+	search_status, err := DBConnection.Query(context.Background(), "SELECT is_searching FROM public.users WHERE user_id = $1",
 		user_id)
 	if err != nil {
 		DBQueryError(err)
 	}
 
-	defer searchStatus.Close()
+	defer search_status.Close()
 
 	var is_search bool
 
-	for searchStatus.Next() {
-		err := searchStatus.Scan(&is_search)
+	for search_status.Next() {
+		err := search_status.Scan(&is_search)
 		if err != nil {
 			DBScanError(err)
 		}
 	}
 
-	if searchStatus.Err() != nil {
+	if search_status.Err() != nil {
 		DBQueryError(err)
 	}
 
@@ -103,6 +103,29 @@ func ChangeUserSearchingState(user_id int, status bool) {
 	if err != nil {
 		DBQueryError(err)
 	}
+}
+
+func FindFreeUsers() []int {
+	active_users, err := DBConnection.Query(context.Background(),
+		"SELECT user_id FROM public.users WHERE is_chatting = false AND is_searching = true")
+	if err != nil {
+		DBQueryError(err)
+	}
+
+	defer active_users.Close()
+
+	var free_users []int
+	var one_user int
+
+	for active_users.Next() {
+		err := active_users.Scan(&one_user)
+		if err != nil {
+			DBScanError(err)
+		}
+		free_users = append(free_users, one_user)
+	}
+
+	return free_users
 }
 
 func DBScanError(err error) {
