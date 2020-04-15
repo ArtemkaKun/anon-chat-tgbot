@@ -87,6 +87,25 @@ func TestFindFreeUsers(t *testing.T) {
 	}
 }
 
+func TestFindSecondUserFromChat(t *testing.T) {
+	new_cases := [][]int{{1, 2}, {3, 4}, {5, 7}}
+
+	expected := []int{2, 4, 7}
+	var got []int
+
+	for _, one_pair := range new_cases {
+		AddNewChat(one_pair[0], one_pair[1])
+	}
+
+	for _, one_pair := range new_cases {
+		got = append(got, FindSecondUserFromChat(one_pair[0]))
+	}
+
+	if !reflect.DeepEqual(got, expected) {
+		t.Errorf("Expected %v, got %v", expected, got)
+	}
+}
+
 func InsertNewCases(new_cases []int) {
 	for _, one_case := range new_cases {
 		UserFirstStart(one_case)

@@ -128,6 +128,39 @@ func FindFreeUsers() []int {
 	return free_users
 }
 
+func AddNewChat(first_user_id int, second_user_id int) {
+	_, err := DBConnection.Exec(context.Background(), "INSERT INTO public.chats VALUES($1, $2)",
+		first_user_id, second_user_id)
+	if err != nil {
+		DBQueryError(err)
+	}
+}
+
+func FindSecondUserFromChat(user_id int) int {
+	next_chat_user, err := DBConnection.Query(context.Background(),
+		"SELECT second_user FROM public.chats WHERE first_user = $1", user_id)
+	if err != nil {
+		DBQueryError(err)
+	}
+
+	defer next_chat_user.Close()
+
+	var second_user int
+
+	for next_chat_user.Next() {
+		err := next_chat_user.Scan(&second_user)
+		if err != nil {
+			DBScanError(err)
+		}
+	}
+
+	if next_chat_user.Err() != nil {
+		DBQueryError(err)
+	}
+
+	return second_user
+}
+
 func DBScanError(err error) {
 	fmt.Println(fmt.Errorf("Scan failed: %w\n", err))
 }

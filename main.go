@@ -288,51 +288,6 @@ func main() {
 //
 //}
 
-//func AddChat(first_user_id int, second_user_id int, my_db *sql.DB, my_bot *tgbotapi.BotAPI) {
-//	stmtIns, err := my_db.Prepare("INSERT INTO chat_buffer VALUES (?, ?)")
-//	if err != nil {
-//		ErrorCatch(err.Error(), my_bot)
-//		panic(err.Error())
-//	}
-//
-//	_, err = stmtIns.Exec(first_user_id, second_user_id)
-//	if err != nil {
-//		ErrorCatch(err.Error(), my_bot)
-//		panic(err.Error())
-//	}
-//
-//	err = stmtIns.Close()
-//	if err != nil {
-//		ErrorCatch(err.Error(), my_bot)
-//		panic(err.Error())
-//	}
-//}
-//func FindChat(user_id int, my_db *sql.DB, my_bot *tgbotapi.BotAPI) int {
-//	stmtOut, err := my_db.Prepare("SELECT second_user FROM chat_buffer WHERE first_user = ?")
-//	if err != nil {
-//		ErrorCatch(err.Error(), my_bot)
-//		panic(err.Error())
-//	}
-//
-//	var second_user int
-//	err = stmtOut.QueryRow(user_id).Scan(&second_user)
-//	if err != nil {
-//		err = stmtOut.Close()
-//		if err != nil {
-//			ErrorCatch(err.Error(), my_bot)
-//			panic(err.Error())
-//		}
-//		return 0
-//	}
-//
-//	err = stmtOut.Close()
-//	if err != nil {
-//		ErrorCatch(err.Error(), my_bot)
-//		panic(err.Error())
-//	}
-//
-//	return second_user
-//}
 //func DeleteChat(user_id int, my_db *sql.DB, my_bot *tgbotapi.BotAPI) {
 //	stmtIns, err := my_db.Prepare("DELETE FROM chat_buffer WHERE first_user = ?")
 //	if err != nil {
