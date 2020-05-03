@@ -9,7 +9,7 @@ import (
 var DBConnection *pgx.Conn
 
 func init() {
-	connection, err := pgx.Connect(context.Background(), "postgres://postgres:1337@localhost:5432/anonchat-tgbot")
+	connection, err := pgx.Connect(context.Background(), "postgres://postgres:1337@34.65.183.194:5432/anonchat-tgbot")
 	if err != nil {
 		DBConnectionError(err)
 	}
@@ -20,7 +20,7 @@ func init() {
 }
 
 func UserFirstStart(user_id int) {
-	_, err := DBConnection.Exec(context.Background(), "INSERT INTO public.users VALUES($1, $2, $3)",
+	_, err := DBConnection.Exec(context.Background(), "INSERT INTO users VALUES($1, $2, $3)",
 		user_id, false, false)
 	if err != nil {
 		DBQueryError(err)
@@ -28,7 +28,7 @@ func UserFirstStart(user_id int) {
 }
 
 func CheckUserReg(user_id int) bool {
-	regStatus, err := DBConnection.Query(context.Background(), "SELECT user_id FROM public.users WHERE user_id = $1",
+	regStatus, err := DBConnection.Query(context.Background(), "SELECT user_id FROM users WHERE user_id = $1",
 		user_id)
 	if err != nil {
 		DBQueryError(err)
@@ -40,7 +40,7 @@ func CheckUserReg(user_id int) bool {
 }
 
 func IsUserChatting(user_id int) bool {
-	chat_status, err := DBConnection.Query(context.Background(), "SELECT is_chatting FROM public.users WHERE user_id = $1",
+	chat_status, err := DBConnection.Query(context.Background(), "SELECT is_chatting FROM users WHERE user_id = $1",
 		user_id)
 	if err != nil {
 		DBQueryError(err)
@@ -65,7 +65,7 @@ func IsUserChatting(user_id int) bool {
 }
 
 func ChangeUserChattingState(user_id int, status bool) {
-	_, err := DBConnection.Exec(context.Background(), "UPDATE public.users SET is_chatting = $2 WHERE user_id = $1",
+	_, err := DBConnection.Exec(context.Background(), "UPDATE users SET is_chatting = $2 WHERE user_id = $1",
 		user_id, status)
 	if err != nil {
 		DBQueryError(err)
@@ -73,7 +73,7 @@ func ChangeUserChattingState(user_id int, status bool) {
 }
 
 func IsUserSearching(user_id int) bool {
-	search_status, err := DBConnection.Query(context.Background(), "SELECT is_searching FROM public.users WHERE user_id = $1",
+	search_status, err := DBConnection.Query(context.Background(), "SELECT is_searching FROM users WHERE user_id = $1",
 		user_id)
 	if err != nil {
 		DBQueryError(err)
@@ -98,7 +98,7 @@ func IsUserSearching(user_id int) bool {
 }
 
 func ChangeUserSearchingState(user_id int, status bool) {
-	_, err := DBConnection.Exec(context.Background(), "UPDATE public.users SET is_searching = $2 WHERE user_id = $1",
+	_, err := DBConnection.Exec(context.Background(), "UPDATE users SET is_searching = $2 WHERE user_id = $1",
 		user_id, status)
 	if err != nil {
 		DBQueryError(err)
@@ -107,7 +107,7 @@ func ChangeUserSearchingState(user_id int, status bool) {
 
 func FindFreeUsers() []int {
 	active_users, err := DBConnection.Query(context.Background(),
-		"SELECT user_id FROM public.users WHERE is_chatting = false AND is_searching = true")
+		"SELECT user_id FROM users WHERE is_chatting = false AND is_searching = true")
 	if err != nil {
 		DBQueryError(err)
 	}
@@ -129,7 +129,7 @@ func FindFreeUsers() []int {
 }
 
 func AddNewChat(first_user_id int, second_user_id int) {
-	_, err := DBConnection.Exec(context.Background(), "INSERT INTO public.chats VALUES($1, $2)",
+	_, err := DBConnection.Exec(context.Background(), "INSERT INTO chats VALUES($1, $2)",
 		first_user_id, second_user_id)
 	if err != nil {
 		DBQueryError(err)
@@ -138,7 +138,7 @@ func AddNewChat(first_user_id int, second_user_id int) {
 
 func FindSecondUserFromChat(user_id int) int {
 	next_chat_user, err := DBConnection.Query(context.Background(),
-		"SELECT second_user FROM public.chats WHERE first_user = $1", user_id)
+		"SELECT second_user FROM chats WHERE first_user = $1", user_id)
 	if err != nil {
 		DBQueryError(err)
 	}
@@ -162,7 +162,7 @@ func FindSecondUserFromChat(user_id int) int {
 }
 
 func DeleteChat(user_id int) {
-	_, err := DBConnection.Exec(context.Background(), "DELETE FROM public.chats WHERE first_user = $1",
+	_, err := DBConnection.Exec(context.Background(), "DELETE FROM chats WHERE first_user = $1",
 		user_id)
 	if err != nil {
 		DBQueryError(err)

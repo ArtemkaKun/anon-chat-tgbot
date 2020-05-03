@@ -23,7 +23,7 @@ var chatControlKeyboardRU = tgbotapi.NewReplyKeyboard(
 )
 
 func init() {
-	bot, err := tgbotapi.NewBotAPI("")
+	bot, err := tgbotapi.NewBotAPI("1022122500:AAFy8sDJFUlgw0e7JURelghBPv_is5kG7ck")
 	if err != nil {
 		BotInitError(err)
 	}
@@ -50,11 +50,11 @@ func BotUpdateLoop() {
 
 		if !update.Message.IsCommand() {
 			switch update.Message.Text {
-			case "New chat":
+			case "New chat", "Начать чат":
 				NewChatButton(update)
 				continue
 
-			case "Leave chat":
+			case "Leave chat", "Покинуть чат":
 				LeaveChatButton(update)
 				continue
 			}
