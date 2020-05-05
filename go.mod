@@ -1,4 +1,4 @@
-module github.com/artemkakun/anonchat-tgbot
+module github.com/artemkakun/anon-chat-tgbot
 
 go 1.14
 

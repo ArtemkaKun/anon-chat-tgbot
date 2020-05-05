@@ -4,180 +4,145 @@ import (
 	"context"
 	"fmt"
 	"github.com/jackc/pgx/v4"
+	"log"
 )
 
 var DBConnection *pgx.Conn
 
+//postgres://postgres:1337@/anonchat-tgbot?host=/cloudsql/tg-bots-276110:europe-west6:tgbots-db
 func init() {
-	connection, err := pgx.Connect(context.Background(), "postgres://postgres:1337@34.65.183.194:5432/anonchat-tgbot")
+	var err error
+
+	DBConnection, err = pgx.Connect(context.Background(), "postgres://postgres:1337@34.65.65.169:5432/anonchat-tgbot")
 	if err != nil {
 		DBConnectionError(err)
 	}
 
-	fmt.Println("Connected to PSQL!")
-
-	DBConnection = connection
+	log.Println("Connected to PSQL!")
 }
 
-func UserFirstStart(user_id int) {
-	_, err := DBConnection.Exec(context.Background(), "INSERT INTO users VALUES($1, $2, $3)",
-		user_id, false, false)
+func UserFirstStart(userId int) {
+	x, err := DBConnection.Exec(context.Background(), "INSERT INTO users VALUES($1, $2, $3)",
+		userId, false, false)
+
 	if err != nil {
 		DBQueryError(err)
 	}
+	x.Insert()
 }
 
-func CheckUserReg(user_id int) bool {
-	regStatus, err := DBConnection.Query(context.Background(), "SELECT user_id FROM users WHERE user_id = $1",
-		user_id)
-	if err != nil {
-		DBQueryError(err)
-	}
+func CheckUserReg(userId int) (isRegistered bool) {
+	var findedUser int
 
-	defer regStatus.Close()
-
-	return regStatus.Next()
-}
-
-func IsUserChatting(user_id int) bool {
-	chat_status, err := DBConnection.Query(context.Background(), "SELECT is_chatting FROM users WHERE user_id = $1",
-		user_id)
+	err := DBConnection.QueryRow(context.Background(), "SELECT user_id FROM users WHERE user_id = $1",
+		userId).Scan(&findedUser)
 	if err != nil {
 		DBQueryError(err)
 	}
 
-	defer chat_status.Close()
-
-	var is_chat bool
-
-	for chat_status.Next() {
-		err := chat_status.Scan(&is_chat)
-		if err != nil {
-			DBScanError(err)
-		}
+	if findedUser != 0 {
+		isRegistered = true
 	}
 
-	if chat_status.Err() != nil {
-		DBQueryError(err)
-	}
-
-	return is_chat
+	return
 }
 
-func ChangeUserChattingState(user_id int, status bool) {
-	_, err := DBConnection.Exec(context.Background(), "UPDATE users SET is_chatting = $2 WHERE user_id = $1",
-		user_id, status)
-	if err != nil {
-		DBQueryError(err)
-	}
-}
-
-func IsUserSearching(user_id int) bool {
-	search_status, err := DBConnection.Query(context.Background(), "SELECT is_searching FROM users WHERE user_id = $1",
-		user_id)
+func IsUserChatting(userId int) (isChat bool) {
+	err := DBConnection.QueryRow(context.Background(), "SELECT is_chatting FROM users WHERE user_id = $1",
+		userId).Scan(&isChat)
 	if err != nil {
 		DBQueryError(err)
 	}
 
-	defer search_status.Close()
-
-	var is_search bool
-
-	for search_status.Next() {
-		err := search_status.Scan(&is_search)
-		if err != nil {
-			DBScanError(err)
-		}
-	}
-
-	if search_status.Err() != nil {
-		DBQueryError(err)
-	}
-
-	return is_search
+	return
 }
 
-func ChangeUserSearchingState(user_id int, status bool) {
-	_, err := DBConnection.Exec(context.Background(), "UPDATE users SET is_searching = $2 WHERE user_id = $1",
-		user_id, status)
+func ChangeUserChattingState(userId int, status bool) {
+	x, err := DBConnection.Exec(context.Background(), "UPDATE users SET is_chatting = $2 WHERE user_id = $1",
+		userId, status)
 	if err != nil {
 		DBQueryError(err)
 	}
+	x.Update()
 }
 
-func FindFreeUsers() []int {
-	active_users, err := DBConnection.Query(context.Background(),
+func IsUserSearching(userId int) (isSearch bool) {
+	err := DBConnection.QueryRow(context.Background(), "SELECT is_searching FROM users WHERE user_id = $1",
+		userId).Scan(&isSearch)
+	if err != nil {
+		DBQueryError(err)
+	}
+
+	return
+}
+
+func ChangeUserSearchingState(userId int, status bool) {
+	x, err := DBConnection.Exec(context.Background(), "UPDATE users SET is_searching = $2 WHERE user_id = $1",
+		userId, status)
+	if err != nil {
+		DBQueryError(err)
+	}
+	x.Update()
+}
+
+func FindFreeUsers() (freeUsers []int) {
+	activeUsers, err := DBConnection.Query(context.Background(),
 		"SELECT user_id FROM users WHERE is_chatting = false AND is_searching = true")
 	if err != nil {
 		DBQueryError(err)
 	}
 
-	defer active_users.Close()
+	defer activeUsers.Close()
 
-	var free_users []int
-	var one_user int
-
-	for active_users.Next() {
-		err := active_users.Scan(&one_user)
+	var oneUser int
+	for activeUsers.Next() {
+		err := activeUsers.Scan(&oneUser)
 		if err != nil {
 			DBScanError(err)
 		}
-		free_users = append(free_users, one_user)
+		freeUsers = append(freeUsers, oneUser)
 	}
 
-	return free_users
+	return
 }
 
-func AddNewChat(first_user_id int, second_user_id int) {
-	_, err := DBConnection.Exec(context.Background(), "INSERT INTO chats VALUES($1, $2)",
-		first_user_id, second_user_id)
+func AddNewChat(firstUserId int, secondUserId int) {
+	x, err := DBConnection.Exec(context.Background(), "INSERT INTO chats VALUES($1, $2)",
+		firstUserId, secondUserId)
 	if err != nil {
 		DBQueryError(err)
 	}
+	x.Insert()
 }
 
-func FindSecondUserFromChat(user_id int) int {
-	next_chat_user, err := DBConnection.Query(context.Background(),
-		"SELECT second_user FROM chats WHERE first_user = $1", user_id)
+func FindSecondUserFromChat(userId int) (secondUser int) {
+	err := DBConnection.QueryRow(context.Background(),
+		"SELECT second_user FROM chats WHERE first_user = $1", userId).Scan(&secondUser)
 	if err != nil {
 		DBQueryError(err)
 	}
 
-	defer next_chat_user.Close()
-
-	var second_user = 0
-
-	for next_chat_user.Next() {
-		err := next_chat_user.Scan(&second_user)
-		if err != nil {
-			DBScanError(err)
-		}
-	}
-
-	if next_chat_user.Err() != nil {
-		DBQueryError(err)
-	}
-
-	return second_user
+	return
 }
 
-func DeleteChat(user_id int) {
-	_, err := DBConnection.Exec(context.Background(), "DELETE FROM chats WHERE first_user = $1",
-		user_id)
-	if err != nil {
-		DBQueryError(err)
-	}
-}
+//func DeleteChat(userId int) {
+//	x, err := DBConnection.Exec(context.Background(), "DELETE FROM chats WHERE first_user = $1",
+//		userId)
+//	if err != nil {
+//		DBQueryError(err)
+//	}
+//	x.Delete()
+//}
 
 func DBScanError(err error) {
-	fmt.Println(fmt.Errorf("Scan failed: %w\n", err))
+	log.Println(fmt.Errorf("Scan failed: %w\n", err))
 }
 
 func DBQueryError(err error) {
-	fmt.Println(fmt.Errorf("QueryRow failed: %v \n", err))
+	log.Println(fmt.Errorf("QueryRow failed: %v \n", err))
 }
 
 func DBConnectionError(err error) {
-	fmt.Println(fmt.Errorf("Unable to connection to database: %w\n", err))
+	log.Println(fmt.Errorf("Unable to connection to database: %w\n", err))
 	panic(err)
 }

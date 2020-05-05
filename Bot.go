@@ -23,14 +23,14 @@ var chatControlKeyboardRU = tgbotapi.NewReplyKeyboard(
 )
 
 func init() {
-	bot, err := tgbotapi.NewBotAPI("1022122500:AAFy8sDJFUlgw0e7JURelghBPv_is5kG7ck")
+	var err error
+
+	Bot, err = tgbotapi.NewBotAPI("1022122500:AAFy8sDJFUlgw0e7JURelghBPv_is5kG7ck")
 	if err != nil {
 		BotInitError(err)
 	}
 
-	log.Printf("Autorised on account %s", bot.Self.UserName)
-
-	Bot = bot
+	log.Printf("Autorised on account %s", Bot.Self.UserName)
 }
 
 func BotUpdateLoop() {
@@ -59,7 +59,7 @@ func BotUpdateLoop() {
 				continue
 			}
 
-			if FindSecondUserFromChat(update.Message.From.ID) == 0 {
+			if !IsUserChatting(update.Message.From.ID) {
 				continue
 			}
 
@@ -111,9 +111,9 @@ func StartCommand(update tgbotapi.Update) {
 }
 
 func SendMessageToAnotherUser(update tgbotapi.Update) {
-	second_user := FindSecondUserFromChat(update.Message.From.ID)
+	secondUser := FindSecondUserFromChat(update.Message.From.ID)
 
-	msg := tgbotapi.NewMessage(int64(second_user), update.Message.Text)
+	msg := tgbotapi.NewMessage(int64(secondUser), update.Message.Text)
 
 	if msg.Text != "" {
 		BotSendMessage(msg)
@@ -121,7 +121,7 @@ func SendMessageToAnotherUser(update tgbotapi.Update) {
 	}
 
 	if update.Message.Photo != nil {
-		photo := tgbotapi.NewPhotoShare(int64(second_user), "")
+		photo := tgbotapi.NewPhotoShare(int64(secondUser), "")
 		photo.FileID = (*update.Message.Photo)[1].FileID
 
 		BotSendPhoto(photo)
@@ -129,7 +129,7 @@ func SendMessageToAnotherUser(update tgbotapi.Update) {
 	}
 
 	if update.Message.Voice != nil {
-		voice := tgbotapi.NewVoiceShare(int64(second_user), "")
+		voice := tgbotapi.NewVoiceShare(int64(secondUser), "")
 		voice.FileID = update.Message.Voice.FileID
 
 		BotSendVoice(voice)
@@ -137,7 +137,7 @@ func SendMessageToAnotherUser(update tgbotapi.Update) {
 	}
 
 	if update.Message.Animation != nil {
-		gif := tgbotapi.NewAnimationShare(int64(second_user), "")
+		gif := tgbotapi.NewAnimationShare(int64(secondUser), "")
 		gif.FileID = update.Message.Animation.FileID
 
 		BotSendGif(gif)
@@ -145,7 +145,7 @@ func SendMessageToAnotherUser(update tgbotapi.Update) {
 	}
 
 	if update.Message.Audio != nil {
-		audio := tgbotapi.NewAudioShare(int64(second_user), "")
+		audio := tgbotapi.NewAudioShare(int64(secondUser), "")
 		audio.FileID = update.Message.Audio.FileID
 
 		BotSendAudio(audio)
@@ -153,7 +153,7 @@ func SendMessageToAnotherUser(update tgbotapi.Update) {
 	}
 
 	if update.Message.Sticker != nil {
-		sticker := tgbotapi.NewStickerShare(int64(second_user), "")
+		sticker := tgbotapi.NewStickerShare(int64(secondUser), "")
 		sticker.FileID = update.Message.Sticker.FileID
 
 		BotSendSticker(sticker)
@@ -161,7 +161,7 @@ func SendMessageToAnotherUser(update tgbotapi.Update) {
 	}
 
 	if update.Message.Document != nil {
-		doc := tgbotapi.NewDocumentShare(int64(second_user), "")
+		doc := tgbotapi.NewDocumentShare(int64(secondUser), "")
 		doc.FileID = update.Message.Document.FileID
 
 		BotSendDoc(doc)
@@ -169,7 +169,7 @@ func SendMessageToAnotherUser(update tgbotapi.Update) {
 	}
 
 	if update.Message.Video != nil {
-		video := tgbotapi.NewVideoShare(int64(second_user), "")
+		video := tgbotapi.NewVideoShare(int64(secondUser), "")
 		video.FileID = update.Message.Video.FileID
 
 		BotSendVideo(video)
@@ -177,11 +177,11 @@ func SendMessageToAnotherUser(update tgbotapi.Update) {
 	}
 
 	if update.Message.VideoNote != nil {
-		video_note := tgbotapi.NewVideoNoteShare(int64(second_user), 0, "")
-		video_note.FileID = update.Message.VideoNote.FileID
-		video_note.Length = update.Message.VideoNote.Length
+		videoNote := tgbotapi.NewVideoNoteShare(int64(secondUser), 0, "")
+		videoNote.FileID = update.Message.VideoNote.FileID
+		videoNote.Length = update.Message.VideoNote.Length
 
-		BotSendVideoNote(video_note)
+		BotSendVideoNote(videoNote)
 		return
 	}
 
