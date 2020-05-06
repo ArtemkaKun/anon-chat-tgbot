@@ -50,6 +50,11 @@ func GetRoomsCache() map[string]int64 {
 	return Rooms
 }
 
+func IsUserExist(user int64) bool {
+	_, exist := Users[user]
+	return exist
+}
+
 func AddNewUser(user int64) {
 	Users[user] = new(UserStatuses)
 	Users[user].SetSearchingStatus(false)
@@ -69,6 +74,16 @@ func CheckUserSearchingStatus(user int64) bool {
 
 func CheckUserChattingStatus(user int64) bool {
 	return Users[user].IsUserChatting()
+}
+
+func SearchingUsersList() (users []int64) {
+	for userId, userStatus := range Users {
+		if userStatus.IsUserSearching() {
+			users = append(users, userId)
+		}
+	}
+
+	return
 }
 
 func AddChat(firstUser, secondUser int64) {
@@ -97,6 +112,26 @@ func DeleteRoom(token string) {
 
 func GetRoomAuthor(token string) int64 {
 	return Rooms[token]
+}
+
+func GetRoomToken(user int64) string {
+	for token, roomAuthor := range Rooms {
+		if roomAuthor == user {
+			return token
+		}
+	}
+
+	return ""
+}
+
+func CheckIsRoomAuthor(user int64) bool {
+	for _, roomAuthor := range Rooms {
+		if roomAuthor == user {
+			return true
+		}
+	}
+
+	return false
 }
 
 func CreateToken(id int64) string {

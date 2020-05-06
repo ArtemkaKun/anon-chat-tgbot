@@ -13,27 +13,27 @@ func main() {
 
 func ChatMaker() {
 	for true {
-		free_users := FindFreeUsers()
-		users_amount := len(free_users)
+		freeUsers := SearchingUsersList()
+		usersAmount := len(freeUsers)
 
-		if users_amount > 1 {
+		if usersAmount > 1 {
 			rand.Seed(time.Now().UnixNano())
-			user_one := rand.Intn(users_amount)
-			user_two := rand.Intn(users_amount)
+			userOne := rand.Intn(usersAmount)
+			userTwo := rand.Intn(usersAmount)
 
-			for user_two == user_one {
-				user_two = rand.Intn(users_amount)
+			for userTwo == userOne {
+				userTwo = rand.Intn(usersAmount)
 			}
 
-			first_user := free_users[user_one]
-			second_user := free_users[user_two]
+			firstUser := freeUsers[userOne]
+			secondUser := freeUsers[userTwo]
 
-			MakeChat(first_user, second_user)
+			MakeChat(firstUser, secondUser)
 
-			msg := tgbotapi.NewMessage(int64(first_user), "Now you can chat")
+			msg := tgbotapi.NewMessage(firstUser, "Now you can chat")
 			BotSendMessage(msg)
 
-			msg = tgbotapi.NewMessage(int64(second_user), "Now you can chat")
+			msg = tgbotapi.NewMessage(secondUser, "Now you can chat")
 			BotSendMessage(msg)
 		}
 
@@ -42,13 +42,12 @@ func ChatMaker() {
 	}
 }
 
-func MakeChat(first_user int, second_user int) {
-	ChangeUserSearchingState(first_user, false)
-	ChangeUserSearchingState(second_user, false)
+func MakeChat(firstUser int64, secondUser int64) {
+	ChangeUserSearchingStatus(firstUser, false)
+	ChangeUserSearchingStatus(secondUser, false)
 
-	ChangeUserChattingState(first_user, true)
-	ChangeUserChattingState(second_user, true)
+	ChangeUserChattingStatus(firstUser, true)
+	ChangeUserChattingStatus(secondUser, true)
 
-	AddNewChat(first_user, second_user)
-	AddNewChat(second_user, first_user)
+	AddChat(firstUser, secondUser)
 }

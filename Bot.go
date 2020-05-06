@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/Syfaro/telegram-bot-api"
 	"log"
+	"os"
 )
 
 var Bot *tgbotapi.BotAPI
@@ -12,6 +13,8 @@ var chatControlKeyboardUS = tgbotapi.NewReplyKeyboard(
 	tgbotapi.NewKeyboardButtonRow(
 		tgbotapi.NewKeyboardButton("New chat"),
 		tgbotapi.NewKeyboardButton("Leave chat"),
+		tgbotapi.NewKeyboardButton("Create a secret room"),
+		tgbotapi.NewKeyboardButton("Join a secret room"),
 	),
 )
 
@@ -19,15 +22,17 @@ var chatControlKeyboardRU = tgbotapi.NewReplyKeyboard(
 	tgbotapi.NewKeyboardButtonRow(
 		tgbotapi.NewKeyboardButton("Начать чат"),
 		tgbotapi.NewKeyboardButton("Покинуть чат"),
+		tgbotapi.NewKeyboardButton("Создать секретную комнату"),
+		tgbotapi.NewKeyboardButton("Войти в секретную комнату"),
 	),
 )
 
 func init() {
 	var err error
 
-	Bot, err = tgbotapi.NewBotAPI("1022122500:AAFy8sDJFUlgw0e7JURelghBPv_is5kG7ck")
+	Bot, err = tgbotapi.NewBotAPI(os.Getenv("BOT_TOKEN"))
 	if err != nil {
-		BotInitError(err)
+		log.Panic(err)
 	}
 
 	log.Printf("Autorised on account %s", Bot.Self.UserName)
@@ -39,7 +44,7 @@ func BotUpdateLoop() {
 
 	updates, err := Bot.GetUpdatesChan(u)
 	if err != nil {
-		BotInitError(err)
+		log.Panic(err)
 	}
 
 	for update := range updates {
@@ -59,7 +64,7 @@ func BotUpdateLoop() {
 				continue
 			}
 
-			if !IsUserChatting(update.Message.From.ID) {
+			if !CheckUserChattingStatus(int64(update.Message.From.ID)) {
 				continue
 			}
 
@@ -70,14 +75,119 @@ func BotUpdateLoop() {
 		switch update.Message.Command() {
 		case "start":
 			StartCommand(update)
-
-		case "go_chat":
-			NewChatButton(update)
-
-		case "leave_chat":
-			LeaveChatButton(update)
 		}
 	}
+}
+
+func NewChatButton(update tgbotapi.Update) {
+	if !IsUserExist(int64(update.Message.From.ID)) {
+		AddNewUser(int64(update.Message.From.ID))
+	}
+
+	if CheckUserSearchingStatus(int64(update.Message.From.ID)) {
+		AlreadySearching(int64(update.Message.From.ID), update)
+		return
+	}
+
+	if CheckUserChattingStatus(int64(update.Message.From.ID)) {
+		AlreadyChatting(int64(update.Message.From.ID), update)
+		return
+	}
+
+	if CheckIsRoomAuthor(int64(update.Message.From.ID)) {
+		RoomAuthor(int64(update.Message.From.ID), update)
+		return
+	}
+
+	ChangeUserSearchingStatus(int64(update.Message.From.ID), true)
+
+	msg := tgbotapi.NewMessage(int64(update.Message.From.ID), "Search started")
+
+	if update.Message.From.LanguageCode == "ru" || update.Message.From.LanguageCode == "ua" {
+		msg = tgbotapi.NewMessage(int64(update.Message.From.ID), "Поиск начался")
+	}
+
+	BotSendMessage(msg)
+}
+
+func AlreadySearching(user int64, update tgbotapi.Update) {
+	msg := tgbotapi.NewMessage(user, "You are searching already")
+
+	if update.Message.From.LanguageCode == "ru" || update.Message.From.LanguageCode == "ua" {
+		msg.Text = "Вы уже ищите чат"
+	}
+
+	BotSendMessage(msg)
+}
+
+func AlreadyChatting(user int64, update tgbotapi.Update) {
+	msg := tgbotapi.NewMessage(user, "You are chatting already")
+
+	if update.Message.From.LanguageCode == "ru" || update.Message.From.LanguageCode == "ua" {
+		msg.Text = "Вы уже в чате"
+	}
+
+	BotSendMessage(msg)
+}
+
+func RoomAuthor(user int64, update tgbotapi.Update) {
+	msg := tgbotapi.NewMessage(user, "You are the secret room author. Wait for second people or leave the room")
+
+	if update.Message.From.LanguageCode == "ru" || update.Message.From.LanguageCode == "ua" {
+		msg.Text = "Вы автор секретной комнаты. Подождите второго человека или выйдите из комнаты"
+	}
+
+	BotSendMessage(msg)
+}
+
+func LeaveChatButton(update tgbotapi.Update) {
+	if !IsUserExist(int64(update.Message.From.ID)) {
+		AddNewUser(int64(update.Message.From.ID))
+	}
+
+	if !CheckUserChattingStatus(int64(update.Message.From.ID)) {
+		NotChatting(int64(update.Message.From.ID), update)
+		return
+	}
+
+	if CheckIsRoomAuthor(int64(update.Message.From.ID)) {
+		DeleteRoom(GetRoomToken(int64(update.Message.From.ID)))
+
+		msg := tgbotapi.NewMessage(int64(update.Message.From.ID), "You delete a secret room")
+
+		if update.Message.From.LanguageCode == "ru" || update.Message.From.LanguageCode == "ua" {
+			msg = tgbotapi.NewMessage(int64(update.Message.From.ID), "Вы удалили секретную комнату")
+		}
+
+		BotSendMessage(msg)
+		return
+	}
+
+	secondUser := GetSecondUser(int64(update.Message.From.ID))
+
+	DeleteChat(int64(update.Message.From.ID), secondUser)
+
+	ChangeUserChattingStatus(int64(update.Message.From.ID), false)
+	ChangeUserChattingStatus(secondUser, false)
+
+	msg := tgbotapi.NewMessage(int64(update.Message.From.ID), "You leaved a chat")
+
+	if update.Message.From.LanguageCode == "ru" || update.Message.From.LanguageCode == "ua" {
+		msg = tgbotapi.NewMessage(int64(update.Message.From.ID), "Вы покинули чат")
+	}
+
+	BotSendMessage(msg)
+	BotSendMessage(tgbotapi.NewMessage(secondUser, "The stranger leave the chat"))
+}
+
+func NotChatting(user int64, update tgbotapi.Update) {
+	msg := tgbotapi.NewMessage(user, "You are not chatting now!")
+
+	if update.Message.From.LanguageCode == "ru" || update.Message.From.LanguageCode == "ua" {
+		msg.Text = "Вы не находитесь в чате"
+	}
+
+	BotSendMessage(msg)
 }
 
 func StartCommand(update tgbotapi.Update) {
@@ -103,17 +213,13 @@ func StartCommand(update tgbotapi.Update) {
 		msg.ReplyMarkup = chatControlKeyboardUS
 	}
 
-	defer BotSendMessage(msg)
-
-	if !CheckUserReg(update.Message.From.ID) {
-		UserFirstStart(update.Message.From.ID)
-	}
+	BotSendMessage(msg)
 }
 
 func SendMessageToAnotherUser(update tgbotapi.Update) {
-	secondUser := FindSecondUserFromChat(update.Message.From.ID)
+	secondUser := GetSecondUser(int64(update.Message.From.ID))
 
-	msg := tgbotapi.NewMessage(int64(secondUser), update.Message.Text)
+	msg := tgbotapi.NewMessage(secondUser, update.Message.Text)
 
 	if msg.Text != "" {
 		BotSendMessage(msg)
@@ -121,7 +227,7 @@ func SendMessageToAnotherUser(update tgbotapi.Update) {
 	}
 
 	if update.Message.Photo != nil {
-		photo := tgbotapi.NewPhotoShare(int64(secondUser), "")
+		photo := tgbotapi.NewPhotoShare(secondUser, "")
 		photo.FileID = (*update.Message.Photo)[1].FileID
 
 		BotSendPhoto(photo)
@@ -129,7 +235,7 @@ func SendMessageToAnotherUser(update tgbotapi.Update) {
 	}
 
 	if update.Message.Voice != nil {
-		voice := tgbotapi.NewVoiceShare(int64(secondUser), "")
+		voice := tgbotapi.NewVoiceShare(secondUser, "")
 		voice.FileID = update.Message.Voice.FileID
 
 		BotSendVoice(voice)
@@ -137,7 +243,7 @@ func SendMessageToAnotherUser(update tgbotapi.Update) {
 	}
 
 	if update.Message.Animation != nil {
-		gif := tgbotapi.NewAnimationShare(int64(secondUser), "")
+		gif := tgbotapi.NewAnimationShare(secondUser, "")
 		gif.FileID = update.Message.Animation.FileID
 
 		BotSendGif(gif)
@@ -145,7 +251,7 @@ func SendMessageToAnotherUser(update tgbotapi.Update) {
 	}
 
 	if update.Message.Audio != nil {
-		audio := tgbotapi.NewAudioShare(int64(secondUser), "")
+		audio := tgbotapi.NewAudioShare(secondUser, "")
 		audio.FileID = update.Message.Audio.FileID
 
 		BotSendAudio(audio)
@@ -153,7 +259,7 @@ func SendMessageToAnotherUser(update tgbotapi.Update) {
 	}
 
 	if update.Message.Sticker != nil {
-		sticker := tgbotapi.NewStickerShare(int64(secondUser), "")
+		sticker := tgbotapi.NewStickerShare(secondUser, "")
 		sticker.FileID = update.Message.Sticker.FileID
 
 		BotSendSticker(sticker)
@@ -161,7 +267,7 @@ func SendMessageToAnotherUser(update tgbotapi.Update) {
 	}
 
 	if update.Message.Document != nil {
-		doc := tgbotapi.NewDocumentShare(int64(secondUser), "")
+		doc := tgbotapi.NewDocumentShare(secondUser, "")
 		doc.FileID = update.Message.Document.FileID
 
 		BotSendDoc(doc)
@@ -169,7 +275,7 @@ func SendMessageToAnotherUser(update tgbotapi.Update) {
 	}
 
 	if update.Message.Video != nil {
-		video := tgbotapi.NewVideoShare(int64(secondUser), "")
+		video := tgbotapi.NewVideoShare(secondUser, "")
 		video.FileID = update.Message.Video.FileID
 
 		BotSendVideo(video)
@@ -177,7 +283,7 @@ func SendMessageToAnotherUser(update tgbotapi.Update) {
 	}
 
 	if update.Message.VideoNote != nil {
-		videoNote := tgbotapi.NewVideoNoteShare(int64(secondUser), 0, "")
+		videoNote := tgbotapi.NewVideoNoteShare(secondUser, 0, "")
 		videoNote.FileID = update.Message.VideoNote.FileID
 		videoNote.Length = update.Message.VideoNote.Length
 
@@ -190,97 +296,6 @@ func SendMessageToAnotherUser(update tgbotapi.Update) {
 	} else {
 		msg.Text = "Bot cannot send this yet! Please, contact with creator"
 	}
-	BotSendMessage(msg)
-}
-
-func LeaveChatButton(update tgbotapi.Update) {
-	msg := tgbotapi.NewMessage(int64(update.Message.From.ID), "You leaved a chat")
-
-	if update.Message.From.LanguageCode == "ru" || update.Message.From.LanguageCode == "ua" {
-		msg = tgbotapi.NewMessage(int64(update.Message.From.ID), "Вы покинули чат")
-	}
-
-	if !CheckUserReg(update.Message.From.ID) {
-		BadRegistration(msg, update)
-		return
-	}
-
-	second_user := FindSecondUserFromChat(update.Message.From.ID)
-
-	if second_user == 0 {
-		NotChatting(msg, update)
-		return
-	}
-
-	DeleteChat(update.Message.From.ID)
-	ChangeUserChattingState(update.Message.From.ID, false)
-
-	DeleteChat(second_user)
-	ChangeUserChattingState(second_user, false)
-
-	BotSendMessage(msg)
-	BotSendMessage(tgbotapi.NewMessage(int64(second_user), "The stranger leave the chat"))
-}
-
-func NewChatButton(update tgbotapi.Update) {
-	msg := tgbotapi.NewMessage(int64(update.Message.From.ID), "Search started")
-
-	if update.Message.From.LanguageCode == "ru" || update.Message.From.LanguageCode == "ua" {
-		msg = tgbotapi.NewMessage(int64(update.Message.From.ID), "Поиск начался")
-	}
-
-	if !CheckUserReg(update.Message.From.ID) {
-		BadRegistration(msg, update)
-		return
-	}
-
-	if IsUserChatting(update.Message.From.ID) {
-		AlreadyChatting(msg, update)
-		return
-	}
-
-	if IsUserSearching(update.Message.From.ID) {
-		AlreadySearching(msg, update)
-		return
-	}
-
-	ChangeUserSearchingState(update.Message.From.ID, true)
-	BotSendMessage(msg)
-}
-
-func AlreadySearching(msg tgbotapi.MessageConfig, update tgbotapi.Update) {
-	msg.Text = "You are searching already"
-	if update.Message.From.LanguageCode == "ru" || update.Message.From.LanguageCode == "ua" {
-		msg.Text = "Вы уже ищите чат"
-	}
-
-	BotSendMessage(msg)
-}
-
-func AlreadyChatting(msg tgbotapi.MessageConfig, update tgbotapi.Update) {
-	msg.Text = "You are chatting already"
-	if update.Message.From.LanguageCode == "ru" || update.Message.From.LanguageCode == "ua" {
-		msg.Text = "Вы уже в чате"
-	}
-
-	BotSendMessage(msg)
-}
-
-func BadRegistration(msg tgbotapi.MessageConfig, update tgbotapi.Update) {
-	msg.Text = "You need /start first"
-	if update.Message.From.LanguageCode == "ru" || update.Message.From.LanguageCode == "ua" {
-		msg.Text = "Используйте /start сначала"
-	}
-
-	BotSendMessage(msg)
-}
-
-func NotChatting(msg tgbotapi.MessageConfig, update tgbotapi.Update) {
-	msg.Text = "You are not chatting now!"
-	if update.Message.From.LanguageCode == "ru" || update.Message.From.LanguageCode == "ua" {
-		msg.Text = "Вы не находитесь в чате"
-	}
-
 	BotSendMessage(msg)
 }
 
@@ -349,9 +364,4 @@ func BotSendVideoNote(msg tgbotapi.VideoNoteConfig) {
 
 func BotSendMessageError(err error) {
 	fmt.Println(fmt.Errorf("Send message failed: %w\n", err))
-}
-
-func BotInitError(err error) {
-	fmt.Println(fmt.Errorf("Bot initialization failed: %w\n", err))
-	panic(err)
 }
