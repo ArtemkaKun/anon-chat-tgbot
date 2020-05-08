@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	go ChatMaker()
+	//go ChatMaker()
 	BotUpdateLoop()
 }
 

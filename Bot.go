@@ -5,6 +5,7 @@ import (
 	"github.com/Syfaro/telegram-bot-api"
 	"log"
 	"os"
+	"strings"
 )
 
 var Bot *tgbotapi.BotAPI
@@ -13,6 +14,8 @@ var chatControlKeyboardUS = tgbotapi.NewReplyKeyboard(
 	tgbotapi.NewKeyboardButtonRow(
 		tgbotapi.NewKeyboardButton("New chat"),
 		tgbotapi.NewKeyboardButton("Leave chat"),
+	),
+	tgbotapi.NewKeyboardButtonRow(
 		tgbotapi.NewKeyboardButton("Create a secret room"),
 		tgbotapi.NewKeyboardButton("Join a secret room"),
 	),
@@ -20,10 +23,12 @@ var chatControlKeyboardUS = tgbotapi.NewReplyKeyboard(
 
 var chatControlKeyboardRU = tgbotapi.NewReplyKeyboard(
 	tgbotapi.NewKeyboardButtonRow(
-		tgbotapi.NewKeyboardButton("Начать чат"),
-		tgbotapi.NewKeyboardButton("Покинуть чат"),
-		tgbotapi.NewKeyboardButton("Создать секретную комнату"),
-		tgbotapi.NewKeyboardButton("Войти в секретную комнату"),
+		tgbotapi.NewKeyboardButton("Начать чат\n"),
+		tgbotapi.NewKeyboardButton("Покинуть чат\n"),
+	),
+	tgbotapi.NewKeyboardButtonRow(
+		tgbotapi.NewKeyboardButton("Создать секретную комнату\n"),
+		tgbotapi.NewKeyboardButton("Войти в секретную комнату\n"),
 	),
 )
 
@@ -62,6 +67,49 @@ func BotUpdateLoop() {
 			case "Leave chat", "Покинуть чат":
 				LeaveChatButton(update)
 				continue
+
+			case "Create a secret room", "Создать секретную комнату":
+				CreateSecretRoom(update)
+				continue
+
+			case "Join a secret room", "Войти в секретную комнату":
+				msg := tgbotapi.NewMessage(int64(update.Message.From.ID), "Now provide the secret token. Please, type word 'token', space and provide token")
+
+				if update.Message.From.LanguageCode == "ru" || update.Message.From.LanguageCode == "ua" {
+					msg.Text = "Теперь введите секретный токен. Пожалуйста, напишите слово 'token', пробел, и введите токен"
+				}
+
+				BotSendMessage(msg)
+				continue
+			}
+
+			if strings.Contains(update.Message.Text, "token") {
+				form := strings.Fields(update.Message.Text)
+				if len(form) < 2 {
+					msg := tgbotapi.NewMessage(int64(update.Message.From.ID), "Token was provided wrongly")
+
+					if update.Message.From.LanguageCode == "ru" || update.Message.From.LanguageCode == "ua" {
+						msg.Text = "Токен был введен не правильно"
+					}
+
+					BotSendMessage(msg)
+					continue
+				}
+
+				token := strings.Fields(update.Message.Text)[1]
+
+				if GetRoomAuthor(token) == 0 {
+					msg := tgbotapi.NewMessage(int64(update.Message.From.ID), "Cannot find a secret room with that token")
+
+					if update.Message.From.LanguageCode == "ru" || update.Message.From.LanguageCode == "ua" {
+						msg.Text = "Не могу найти комнату с таким токеном"
+					}
+
+					BotSendMessage(msg)
+					continue
+				}
+
+				JoinSecretRoom(update, token)
 			}
 
 			if !CheckUserChattingStatus(int64(update.Message.From.ID)) {
@@ -190,7 +238,79 @@ func NotChatting(user int64, update tgbotapi.Update) {
 	BotSendMessage(msg)
 }
 
+func CreateSecretRoom(update tgbotapi.Update) {
+	if !IsUserExist(int64(update.Message.From.ID)) {
+		AddNewUser(int64(update.Message.From.ID))
+	}
+
+	if CheckUserSearchingStatus(int64(update.Message.From.ID)) {
+		AlreadySearching(int64(update.Message.From.ID), update)
+		return
+	}
+
+	if CheckUserChattingStatus(int64(update.Message.From.ID)) {
+		AlreadyChatting(int64(update.Message.From.ID), update)
+		return
+	}
+
+	if CheckIsRoomAuthor(int64(update.Message.From.ID)) {
+		RoomAuthor(int64(update.Message.From.ID), update)
+		return
+	}
+
+	token := AddRoom(int64(update.Message.From.ID))
+
+	msg := tgbotapi.NewMessage(int64(update.Message.From.ID), fmt.Sprintf("You created a secret room. Your secret token %v. Share it to another person.", token))
+
+	if update.Message.From.LanguageCode == "ru" || update.Message.From.LanguageCode == "ua" {
+		msg.Text = fmt.Sprintf("Вы создали секретную комнату. Ваш секретный токен %v. Передайте его другому человеку, что бы он мог подключиться к комнате.", token)
+	}
+
+	BotSendMessage(msg)
+}
+
+func JoinSecretRoom(update tgbotapi.Update, token string) {
+	if !IsUserExist(int64(update.Message.From.ID)) {
+		AddNewUser(int64(update.Message.From.ID))
+	}
+
+	if CheckUserSearchingStatus(int64(update.Message.From.ID)) {
+		AlreadySearching(int64(update.Message.From.ID), update)
+		return
+	}
+
+	if CheckUserChattingStatus(int64(update.Message.From.ID)) {
+		AlreadyChatting(int64(update.Message.From.ID), update)
+		return
+	}
+
+	if CheckIsRoomAuthor(int64(update.Message.From.ID)) {
+		RoomAuthor(int64(update.Message.From.ID), update)
+		return
+	}
+
+	roomAuthor := GetRoomAuthor(token)
+	DeleteRoom(token)
+
+	ChangeUserChattingStatus(int64(update.Message.From.ID), true)
+	ChangeUserChattingStatus(roomAuthor, true)
+
+	AddChat(int64(update.Message.From.ID), roomAuthor)
+
+	msg := tgbotapi.NewMessage(int64(update.Message.From.ID), "You joined a secret room")
+
+	if update.Message.From.LanguageCode == "ru" || update.Message.From.LanguageCode == "ua" {
+		msg.Text = "Вы присоединились к секретной комнате"
+	}
+
+	BotSendMessage(msg)
+	BotSendMessage(tgbotapi.NewMessage(roomAuthor, "Another person joined a secret room"))
+}
+
 func StartCommand(update tgbotapi.Update) {
+	if !IsUserExist(int64(update.Message.From.ID)) {
+		AddNewUser(int64(update.Message.From.ID))
+	}
 	msg := tgbotapi.NewMessage(int64(update.Message.From.ID), "")
 
 	if update.Message.From.LanguageCode == "ru" || update.Message.From.LanguageCode == "ua" {

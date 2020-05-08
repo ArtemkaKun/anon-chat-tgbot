@@ -11,14 +11,14 @@ var DBConnection *pgx.Conn
 
 //postgres://postgres:1337@/anonchat-tgbot?host=/cloudsql/tg-bots-276110:europe-west6:tgbots-db
 func init() {
-	var err error
-
-	DBConnection, err = pgx.Connect(context.Background(), "postgres://postgres:1337@34.65.65.169:5432/anonchat-tgbot")
-	if err != nil {
-		DBConnectionError(err)
-	}
-
-	log.Println("Connected to PSQL!")
+	//var err error
+	//
+	//DBConnection, err = pgx.Connect(context.Background(), "postgres://postgres:1337@34.65.65.169:5432/anonchat-tgbot")
+	//if err != nil {
+	//	DBConnectionError(err)
+	//}
+	//
+	//log.Println("Connected to PSQL!")
 }
 
 func UserFirstStart(userId int) {

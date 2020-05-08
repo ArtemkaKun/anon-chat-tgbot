@@ -12,19 +12,19 @@ type UserStatuses struct {
 	ChattingStatus  bool
 }
 
-func (user UserStatuses) SetSearchingStatus(state bool) {
+func (user *UserStatuses) SetSearchingStatus(state bool) {
 	user.SearchingStatus = state
 }
 
-func (user UserStatuses) SetChattingStatus(state bool) {
+func (user *UserStatuses) SetChattingStatus(state bool) {
 	user.ChattingStatus = state
 }
 
-func (user UserStatuses) IsUserSearching() bool {
-	return user.ChattingStatus
+func (user *UserStatuses) IsUserSearching() bool {
+	return user.SearchingStatus
 }
 
-func (user UserStatuses) IsUserChatting() bool {
+func (user *UserStatuses) IsUserChatting() bool {
 	return user.ChattingStatus
 }
 
@@ -64,6 +64,7 @@ func AddNewUser(user int64) {
 func ChangeUserSearchingStatus(user int64, status bool) {
 	Users[user].SetSearchingStatus(status)
 }
+
 func ChangeUserChattingStatus(user int64, status bool) {
 	Users[user].SetChattingStatus(status)
 }
