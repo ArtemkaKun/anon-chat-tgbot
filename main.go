@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/Syfaro/telegram-bot-api"
 	"math/rand"
 	"time"
@@ -8,7 +9,17 @@ import (
 
 func main() {
 	//go ChatMaker()
+	//go BackupCache()
 	BotUpdateLoop()
+}
+
+func BackupCache() {
+	for {
+		amt := time.Duration(10)
+		time.Sleep(time.Second * amt)
+		fmt.Println("Backup")
+		BackupData(Users, Chats, Rooms)
+	}
 }
 
 func ChatMaker() {

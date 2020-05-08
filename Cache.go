@@ -34,8 +34,19 @@ var Rooms map[string]int64
 
 func init() {
 	Users = make(map[int64]*UserStatuses)
+	for key, val := range GetUsersFromDB() {
+		Users[key] = val
+	}
+
 	Chats = make(map[int64]int64)
+	for key, val := range GetChatsFromDB() {
+		Chats[key] = val
+	}
+
 	Rooms = make(map[string]int64)
+	for key, val := range GetRoomsFromDB() {
+		Rooms[key] = val
+	}
 }
 
 func GetUsersCache() map[int64]*UserStatuses {
