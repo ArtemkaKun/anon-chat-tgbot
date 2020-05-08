@@ -7,6 +7,12 @@ import (
 	"time"
 )
 
+const (
+	PAUSE_FOR_BACKUPS          = 300
+	PAUSE_FOR_CHATMAKER        = 1
+	USERS_AMOUNT_FOR_CHATMAKER = 2
+)
+
 func main() {
 	go BackupCache()
 	go ChatMaker()
@@ -15,7 +21,7 @@ func main() {
 
 func BackupCache() {
 	for {
-		Pause(300)
+		Pause(PAUSE_FOR_BACKUPS)
 
 		log.Println("Backup")
 		BackupData(Users, Chats, Rooms)
@@ -27,11 +33,11 @@ func ChatMaker() {
 		freeUsers := SearchingUsersList()
 		usersAmount := len(freeUsers)
 
-		if usersAmount > 1 {
+		if usersAmount >= USERS_AMOUNT_FOR_CHATMAKER {
 			CreateNewChat(usersAmount, freeUsers)
 		}
 
-		Pause(1)
+		Pause(PAUSE_FOR_CHATMAKER)
 	}
 }
 

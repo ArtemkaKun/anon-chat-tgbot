@@ -8,6 +8,11 @@ import (
 	"strings"
 )
 
+const (
+	MIN_WORDS_IN_TOKEN_FORM = 2
+	TOKEN_POSITION_IN_FORM  = 1
+)
+
 var Bot *tgbotapi.BotAPI
 
 var chatControlKeyboardUS = tgbotapi.NewReplyKeyboard(
@@ -63,53 +68,29 @@ func BotUpdateLoop() {
 			case "New chat", "Начать чат":
 				NewChatButton(update)
 				continue
-
 			case "Leave chat/room", "Покинуть чат/комнату":
 				LeaveChatButton(update)
 				continue
-
 			case "Create a secret room", "Создать секретную комнату":
 				CreateSecretRoom(update)
 				continue
-
 			case "Join a secret room", "Войти в секретную комнату":
-				if usersChecks(update) {
-					continue
-				}
-
-				msg := tgbotapi.NewMessage(int64(update.Message.From.ID), "Now provide the secret token. Please, type word 'token', space and provide token")
-
-				if update.Message.From.LanguageCode == "ru" || update.Message.From.LanguageCode == "ua" {
-					msg.Text = "Теперь введите секретный токен. Пожалуйста, напишите слово 'token', пробел, и введите токен"
-				}
-
-				BotSendMessage(msg)
+				JoinRoomTokenMessage(update)
 				continue
 			}
 
 			if strings.Contains(update.Message.Text, "token") {
-				form := strings.Fields(update.Message.Text)
-				if len(form) < 2 {
-					msg := tgbotapi.NewMessage(int64(update.Message.From.ID), "Token was provided wrongly")
+				formData := strings.Fields(update.Message.Text)
 
-					if update.Message.From.LanguageCode == "ru" || update.Message.From.LanguageCode == "ua" {
-						msg.Text = "Токен был введен не правильно"
-					}
-
-					BotSendMessage(msg)
+				if len(formData) < MIN_WORDS_IN_TOKEN_FORM {
+					InvalidTokenFormError(update)
 					continue
 				}
 
-				token := strings.Fields(update.Message.Text)[1]
+				token := formData[TOKEN_POSITION_IN_FORM]
 
 				if GetRoomAuthor(token) == 0 {
-					msg := tgbotapi.NewMessage(int64(update.Message.From.ID), "Cannot find a secret room with that token")
-
-					if update.Message.From.LanguageCode == "ru" || update.Message.From.LanguageCode == "ua" {
-						msg.Text = "Не могу найти комнату с таким токеном"
-					}
-
-					BotSendMessage(msg)
+					InvalidTokenError(update)
 					continue
 				}
 
@@ -137,94 +118,46 @@ func NewChatButton(update tgbotapi.Update) {
 		return
 	}
 
-	ChangeUserSearchingStatus(true, int64(update.Message.From.ID))
+	userID := int64(update.Message.From.ID)
+	ChangeUserSearchingStatus(true, userID)
 
-	msg := tgbotapi.NewMessage(int64(update.Message.From.ID), "Search started")
-
+	msg := tgbotapi.NewMessage(userID, "Search started")
 	if update.Message.From.LanguageCode == "ru" || update.Message.From.LanguageCode == "ua" {
-		msg = tgbotapi.NewMessage(int64(update.Message.From.ID), "Поиск начался")
-	}
-
-	BotSendMessage(msg)
-}
-
-func AlreadySearching(user int64, update tgbotapi.Update) {
-	msg := tgbotapi.NewMessage(user, "You are searching already")
-
-	if update.Message.From.LanguageCode == "ru" || update.Message.From.LanguageCode == "ua" {
-		msg.Text = "Вы уже ищите чат"
-	}
-
-	BotSendMessage(msg)
-}
-
-func AlreadyChatting(user int64, update tgbotapi.Update) {
-	msg := tgbotapi.NewMessage(user, "You are chatting already")
-
-	if update.Message.From.LanguageCode == "ru" || update.Message.From.LanguageCode == "ua" {
-		msg.Text = "Вы уже в чате"
-	}
-
-	BotSendMessage(msg)
-}
-
-func RoomAuthor(user int64, update tgbotapi.Update) {
-	msg := tgbotapi.NewMessage(user, "You are the secret room author. Wait for second people or leave the room")
-
-	if update.Message.From.LanguageCode == "ru" || update.Message.From.LanguageCode == "ua" {
-		msg.Text = "Вы автор секретной комнаты. Подождите второго человека или выйдите из комнаты"
+		msg = tgbotapi.NewMessage(userID, "Поиск начался")
 	}
 
 	BotSendMessage(msg)
 }
 
 func LeaveChatButton(update tgbotapi.Update) {
-	if !IsUserExist(int64(update.Message.From.ID)) {
-		AddNewUser(int64(update.Message.From.ID))
+	userID := int64(update.Message.From.ID)
+
+	if !IsUserExist(userID) {
+		AddNewUser(userID)
 	}
 
-	if CheckIsRoomAuthor(int64(update.Message.From.ID)) {
-		DeleteRoom(GetRoomToken(int64(update.Message.From.ID)))
-
-		msg := tgbotapi.NewMessage(int64(update.Message.From.ID), "You delete a secret room")
-
-		if update.Message.From.LanguageCode == "ru" || update.Message.From.LanguageCode == "ua" {
-			msg = tgbotapi.NewMessage(int64(update.Message.From.ID), "Вы удалили секретную комнату")
-		}
-
-		BotSendMessage(msg)
+	if CheckIsRoomAuthor(userID) {
+		DeleteRoom(GetRoomToken(userID))
+		DeleteRoomMessage(update, userID)
 		return
 	}
 
-	if !CheckUserChattingStatus(int64(update.Message.From.ID)) {
-		NotChatting(int64(update.Message.From.ID), update)
+	if !CheckUserChattingStatus(userID) {
+		NotChattingError(userID, update)
 		return
 	}
 
-	secondUser := GetSecondUser(int64(update.Message.From.ID))
-
-	DeleteChat(int64(update.Message.From.ID), secondUser)
-
-	ChangeUserChattingStatus(false, int64(update.Message.From.ID), secondUser)
-
-	msg := tgbotapi.NewMessage(int64(update.Message.From.ID), "You leaved a chat")
-
-	if update.Message.From.LanguageCode == "ru" || update.Message.From.LanguageCode == "ua" {
-		msg = tgbotapi.NewMessage(int64(update.Message.From.ID), "Вы покинули чат")
-	}
-
-	BotSendMessage(msg)
-	BotSendMessage(tgbotapi.NewMessage(secondUser, "The stranger leave the chat"))
+	RemoveChat(update, userID)
 }
 
-func NotChatting(user int64, update tgbotapi.Update) {
-	msg := tgbotapi.NewMessage(user, "You are not chatting now!")
+func RemoveChat(update tgbotapi.Update, userID int64) {
+	secondUser := GetSecondUser(userID)
 
-	if update.Message.From.LanguageCode == "ru" || update.Message.From.LanguageCode == "ua" {
-		msg.Text = "Вы не находитесь в чате"
-	}
+	DeleteChat(userID, secondUser)
 
-	BotSendMessage(msg)
+	ChangeUserChattingStatus(false, userID, secondUser)
+
+	LeaveChatMessage(update, userID, secondUser)
 }
 
 func CreateSecretRoom(update tgbotapi.Update) {
@@ -234,13 +167,7 @@ func CreateSecretRoom(update tgbotapi.Update) {
 
 	token := AddRoom(int64(update.Message.From.ID))
 
-	msg := tgbotapi.NewMessage(int64(update.Message.From.ID), fmt.Sprintf("You created a secret room. Your secret token %v. Share it to another person.", token))
-
-	if update.Message.From.LanguageCode == "ru" || update.Message.From.LanguageCode == "ua" {
-		msg.Text = fmt.Sprintf("Вы создали секретную комнату. Ваш секретный токен %v. Передайте его другому человеку, что бы он мог подключиться к комнате.", token)
-	}
-
-	BotSendMessage(msg)
+	CreateRoomMessage(update, token)
 }
 
 func JoinSecretRoom(update tgbotapi.Update, token string) {
@@ -255,14 +182,7 @@ func JoinSecretRoom(update tgbotapi.Update, token string) {
 
 	AddChat(int64(update.Message.From.ID), roomAuthor)
 
-	msg := tgbotapi.NewMessage(int64(update.Message.From.ID), "You joined a secret room")
-
-	if update.Message.From.LanguageCode == "ru" || update.Message.From.LanguageCode == "ua" {
-		msg.Text = "Вы присоединились к секретной комнате"
-	}
-
-	BotSendMessage(msg)
-	BotSendMessage(tgbotapi.NewMessage(roomAuthor, "Another person joined a secret room"))
+	JoinRoomMessage(update, roomAuthor)
 }
 
 func usersChecks(update tgbotapi.Update) bool {
@@ -271,17 +191,17 @@ func usersChecks(update tgbotapi.Update) bool {
 	}
 
 	if CheckUserSearchingStatus(int64(update.Message.From.ID)) {
-		AlreadySearching(int64(update.Message.From.ID), update)
+		AlreadySearchingError(int64(update.Message.From.ID), update)
 		return true
 	}
 
 	if CheckUserChattingStatus(int64(update.Message.From.ID)) {
-		AlreadyChatting(int64(update.Message.From.ID), update)
+		AlreadyChattingError(int64(update.Message.From.ID), update)
 		return true
 	}
 
 	if CheckIsRoomAuthor(int64(update.Message.From.ID)) {
-		RoomAuthor(int64(update.Message.From.ID), update)
+		RoomAuthorError(int64(update.Message.From.ID), update)
 		return true
 	}
 	return false
@@ -422,6 +342,120 @@ func BotSendMessage(message interface{}) {
 	}
 }
 
+func JoinRoomTokenMessage(update tgbotapi.Update) {
+	if usersChecks(update) {
+		return
+	}
+
+	msg := tgbotapi.NewMessage(int64(update.Message.From.ID), "Now provide the secret token. Please, type word 'token', space and provide token")
+	if update.Message.From.LanguageCode == "ru" || update.Message.From.LanguageCode == "ua" {
+		msg.Text = "Теперь введите секретный токен. Пожалуйста, напишите слово 'token', пробел, и введите токен"
+	}
+
+	BotSendMessage(msg)
+}
+
+func LeaveChatMessage(update tgbotapi.Update, userID int64, secondUser int64) {
+	msg := tgbotapi.NewMessage(userID, "You leaved a chat")
+
+	if update.Message.From.LanguageCode == "ru" || update.Message.From.LanguageCode == "ua" {
+		msg = tgbotapi.NewMessage(userID, "Вы покинули чат")
+	}
+
+	BotSendMessage(msg)
+	BotSendMessage(tgbotapi.NewMessage(secondUser, "The stranger leave the chat"))
+}
+
+func DeleteRoomMessage(update tgbotapi.Update, userID int64) {
+	msg := tgbotapi.NewMessage(userID, "You delete a secret room")
+	if update.Message.From.LanguageCode == "ru" || update.Message.From.LanguageCode == "ua" {
+		msg = tgbotapi.NewMessage(userID, "Вы удалили секретную комнату")
+	}
+
+	BotSendMessage(msg)
+}
+
+func CreateRoomMessage(update tgbotapi.Update, token string) {
+	msg := tgbotapi.NewMessage(int64(update.Message.From.ID), fmt.Sprintf("You created a secret room. Your secret token %v. Share it to another person.", token))
+
+	if update.Message.From.LanguageCode == "ru" || update.Message.From.LanguageCode == "ua" {
+		msg.Text = fmt.Sprintf("Вы создали секретную комнату. Ваш секретный токен %v. Передайте его другому человеку, что бы он мог подключиться к комнате.", token)
+	}
+
+	BotSendMessage(msg)
+}
+
+func JoinRoomMessage(update tgbotapi.Update, roomAuthor int64) {
+	msg := tgbotapi.NewMessage(int64(update.Message.From.ID), "You joined a secret room")
+
+	if update.Message.From.LanguageCode == "ru" || update.Message.From.LanguageCode == "ua" {
+		msg.Text = "Вы присоединились к секретной комнате"
+	}
+
+	BotSendMessage(msg)
+	BotSendMessage(tgbotapi.NewMessage(roomAuthor, "Another person joined a secret room"))
+}
+
 func BotSendMessageError(err error) {
 	fmt.Println(fmt.Errorf("Send message failed: %w\n", err))
+}
+
+func InvalidTokenError(update tgbotapi.Update) {
+	msg := tgbotapi.NewMessage(int64(update.Message.From.ID), "Cannot find a secret room with that token")
+
+	if update.Message.From.LanguageCode == "ru" || update.Message.From.LanguageCode == "ua" {
+		msg.Text = "Не могу найти комнату с таким токеном"
+	}
+
+	BotSendMessage(msg)
+}
+
+func InvalidTokenFormError(update tgbotapi.Update) {
+	msg := tgbotapi.NewMessage(int64(update.Message.From.ID), "Token was provided wrongly")
+
+	if update.Message.From.LanguageCode == "ru" || update.Message.From.LanguageCode == "ua" {
+		msg.Text = "Токен был введен не правильно"
+	}
+
+	BotSendMessage(msg)
+}
+
+func AlreadySearchingError(user int64, update tgbotapi.Update) {
+	msg := tgbotapi.NewMessage(user, "You are searching already")
+
+	if update.Message.From.LanguageCode == "ru" || update.Message.From.LanguageCode == "ua" {
+		msg.Text = "Вы уже ищите чат"
+	}
+
+	BotSendMessage(msg)
+}
+
+func AlreadyChattingError(user int64, update tgbotapi.Update) {
+	msg := tgbotapi.NewMessage(user, "You are chatting already")
+
+	if update.Message.From.LanguageCode == "ru" || update.Message.From.LanguageCode == "ua" {
+		msg.Text = "Вы уже в чате"
+	}
+
+	BotSendMessage(msg)
+}
+
+func RoomAuthorError(user int64, update tgbotapi.Update) {
+	msg := tgbotapi.NewMessage(user, "You are the secret room author. Wait for second people or leave the room")
+
+	if update.Message.From.LanguageCode == "ru" || update.Message.From.LanguageCode == "ua" {
+		msg.Text = "Вы автор секретной комнаты. Подождите второго человека или выйдите из комнаты"
+	}
+
+	BotSendMessage(msg)
+}
+
+func NotChattingError(user int64, update tgbotapi.Update) {
+	msg := tgbotapi.NewMessage(user, "You are not chatting now!")
+
+	if update.Message.From.LanguageCode == "ru" || update.Message.From.LanguageCode == "ua" {
+		msg.Text = "Вы не находитесь в чате"
+	}
+
+	BotSendMessage(msg)
 }

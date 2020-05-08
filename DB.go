@@ -8,7 +8,6 @@ import (
 	"os"
 )
 
-//var DBConnection *pgx.Conn
 var DBConnection = func() (connection *pgx.Conn) {
 	var err error
 
