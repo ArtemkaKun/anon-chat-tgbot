@@ -72,12 +72,16 @@ func AddNewUser(user int64) {
 	Users[user].SetChattingStatus(false)
 }
 
-func ChangeUserSearchingStatus(user int64, status bool) {
-	Users[user].SetSearchingStatus(status)
+func ChangeUserSearchingStatus(status bool, users ...int64) {
+	for _, user := range users {
+		Users[user].SetSearchingStatus(status)
+	}
 }
 
-func ChangeUserChattingStatus(user int64, status bool) {
-	Users[user].SetChattingStatus(status)
+func ChangeUserChattingStatus(status bool, users ...int64) {
+	for _, user := range users {
+		Users[user].SetChattingStatus(status)
+	}
 }
 
 func CheckUserSearchingStatus(user int64) bool {

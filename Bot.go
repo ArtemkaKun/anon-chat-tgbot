@@ -137,7 +137,7 @@ func NewChatButton(update tgbotapi.Update) {
 		return
 	}
 
-	ChangeUserSearchingStatus(int64(update.Message.From.ID), true)
+	ChangeUserSearchingStatus(true, int64(update.Message.From.ID))
 
 	msg := tgbotapi.NewMessage(int64(update.Message.From.ID), "Search started")
 
@@ -205,8 +205,7 @@ func LeaveChatButton(update tgbotapi.Update) {
 
 	DeleteChat(int64(update.Message.From.ID), secondUser)
 
-	ChangeUserChattingStatus(int64(update.Message.From.ID), false)
-	ChangeUserChattingStatus(secondUser, false)
+	ChangeUserChattingStatus(false, int64(update.Message.From.ID), secondUser)
 
 	msg := tgbotapi.NewMessage(int64(update.Message.From.ID), "You leaved a chat")
 
@@ -252,8 +251,7 @@ func JoinSecretRoom(update tgbotapi.Update, token string) {
 	roomAuthor := GetRoomAuthor(token)
 	DeleteRoom(token)
 
-	ChangeUserChattingStatus(int64(update.Message.From.ID), true)
-	ChangeUserChattingStatus(roomAuthor, true)
+	ChangeUserChattingStatus(true, int64(update.Message.From.ID), roomAuthor)
 
 	AddChat(int64(update.Message.From.ID), roomAuthor)
 

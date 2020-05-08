@@ -22,19 +22,6 @@ var DBConnection = func() (connection *pgx.Conn) {
 	return
 }()
 
-//postgres://postgres:1337@/anonchat-tgbot?host=/cloudsql/tg-bots-276110:europe-west6:tgbots-db
-
-func init() {
-	//var err error
-	//
-	//DBConnection, err = pgx.Connect(context.Background(), os.Getenv("DB_TOKEN"))
-	//if err != nil {
-	//	DBConnectionError(err)
-	//}
-	//
-	//log.Println("Connected to PSQL!")
-}
-
 func BackupData(users map[int64]*UserStatuses, chats map[int64]int64, rooms map[string]int64) {
 	InsertUsersCache(users)
 	InsertChatsCache(chats)
@@ -54,7 +41,7 @@ func InsertUsersCache(users map[int64]*UserStatuses) {
 
 func InsertChatsCache(chats map[int64]int64) {
 	for key, val := range chats {
-		_, err := DBConnection.Exec(context.Background(), "INSERT INTO chats VALUES($1, $2, $3)",
+		_, err := DBConnection.Exec(context.Background(), "INSERT INTO chats VALUES($1, $2)",
 			key, val)
 
 		if err != nil {
@@ -65,7 +52,7 @@ func InsertChatsCache(chats map[int64]int64) {
 
 func InsertRoomsCache(rooms map[string]int64) {
 	for key, val := range rooms {
-		_, err := DBConnection.Exec(context.Background(), "INSERT INTO rooms VALUES($1, $2, $3)",
+		_, err := DBConnection.Exec(context.Background(), "INSERT INTO rooms VALUES($1, $2)",
 			key, val)
 
 		if err != nil {
