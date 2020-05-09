@@ -39,19 +39,23 @@ func InsertUsersCache(users map[int64]*UserStatuses) {
 }
 
 func InsertChatsCache(chats map[int64]int64) {
+	_, err := DBConnection.Exec(context.Background(), "DELETE FROM chats")
+
 	for key, val := range chats {
-		_, err := DBConnection.Exec(context.Background(), "INSERT INTO chats VALUES($1, $2)",
+		_, err = DBConnection.Exec(context.Background(), "INSERT INTO chats VALUES($1, $2)",
 			key, val)
 
 		if err != nil {
-			BackupCacheError(chats)
+			DBQueryError(err)
 		}
 	}
 }
 
 func InsertRoomsCache(rooms map[string]int64) {
+	_, err := DBConnection.Exec(context.Background(), "DELETE FROM rooms")
+
 	for key, val := range rooms {
-		_, err := DBConnection.Exec(context.Background(), "INSERT INTO rooms VALUES($1, $2)",
+		_, err = DBConnection.Exec(context.Background(), "INSERT INTO rooms VALUES($1, $2)",
 			key, val)
 
 		if err != nil {
@@ -66,15 +70,6 @@ func BackupCacheError(cache interface{}) {
 		for key, val := range v {
 			_, err := DBConnection.Exec(context.Background(), "UPDATE users SET is_searching = $1, is_chatting = $2 WHERE user_id = $3",
 				val.IsUserSearching(), val.IsUserChatting(), key)
-
-			if err != nil {
-				DBQueryError(err)
-			}
-		}
-	case map[int64]int64:
-		for key, val := range v {
-			_, err := DBConnection.Exec(context.Background(), "UPDATE chats SET second_user = $1 WHERE first_user = $2",
-				val, key)
 
 			if err != nil {
 				DBQueryError(err)
