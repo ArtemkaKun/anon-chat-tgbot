@@ -64,6 +64,10 @@ func BotUpdateLoop() {
 		}
 
 		if !update.Message.IsCommand() {
+			if !IsUserExist(int64(update.Message.From.ID)) {
+				AddNewUser(int64(update.Message.From.ID))
+			}
+
 			switch update.Message.Text {
 			case "New chat", "Начать чат":
 				NewChatButton(update)
@@ -211,25 +215,24 @@ func StartCommand(update tgbotapi.Update) {
 	if !IsUserExist(int64(update.Message.From.ID)) {
 		AddNewUser(int64(update.Message.From.ID))
 	}
+
 	msg := tgbotapi.NewMessage(int64(update.Message.From.ID), "")
 
 	if update.Message.From.LanguageCode == "ru" || update.Message.From.LanguageCode == "ua" {
-		msg.Text = "Привет, это Freenon чат - анонимный чат, где ты можешь высказывать свои мысли без последствий\n\n" +
-			"Чтобы начать чат с незнакомцем, введи команду /go_chat или нажми кнопку \"Начать чат\"\n\n" +
-			"Чтобы покинуть чат, введи команду /leave_chat или нажми кнопку \"Покинуть чат\"\n\n" +
+		msg.Text = "Привет, это Freenon чат - анонимный чат, где ты можешь высказывать свои мысли без последствий.\n\n" +
+			"Чтобы начать чат с незнакомцем, нажми кнопку \"Начать чат\"\n\n" +
+			"Чтобы покинуть чат, нажми кнопку \"Покинуть чат/комнату\"\n\n" +
 			"Бот не сохраняет данные о пользователях, так что твои личные данные в безопасности.\n\n" +
 			"Если ты хочешь посмотреть, как работает бот - вот мое видео (https://www.youtube.com/watch?v=drtAdOByW54&t=1s)\n\n" +
-			"Если у тебя есть вопросы или предложения, пожалуйста, свяжись со мной, @YUART\n\n" +
-			"Еще можешь зайти на мою страницу Parteon (https://www.patreon.com/artemkakun) - мне будет приятно :)\n"
+			"Если у тебя есть вопросы или предложения, пожалуйста, свяжись со мной, @YUART\n\n"
 		msg.ReplyMarkup = chatControlKeyboardRU
 	} else {
 		msg.Text = "Hello, this is Freedom chat, where you can freely express your minds and talk with other strangers.\n\n" +
-			"To start the chat, send /go_chat command or press \"New chat\" button\n\n" +
-			"To leave the chat, send /leave_chat command or press \"Leave chat\" button\n\n" +
+			"To start the chat, press \"New chat\" button\n\n" +
+			"To leave the chat, press \"Leave chat/room\" button\n\n" +
 			"Bot doesn't store any personal data, so chats are fully anonymous.\n\n" +
 			"If You want to check how the bot works - check my video (https://www.youtube.com/watch?v=drtAdOByW54&t=1s)\n\n" +
-			"If You have some questions or suggestions, please, feel free to contact with me, @YUART\n\n" +
-			"Also, check my Patreon page (https://www.patreon.com/artemkakun) if you want receive some bonuses from me :)\n"
+			"If You have some questions or suggestions, please, feel free to contact with me, @YUART\n\n"
 		msg.ReplyMarkup = chatControlKeyboardUS
 	}
 

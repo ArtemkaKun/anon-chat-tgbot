@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	PAUSE_FOR_BACKUPS          = 300
+	PAUSE_FOR_BACKUPS          = 100
 	PAUSE_FOR_CHATMAKER        = 1
 	USERS_AMOUNT_FOR_CHATMAKER = 2
 )
