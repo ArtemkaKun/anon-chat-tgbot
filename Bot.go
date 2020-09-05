@@ -242,7 +242,7 @@ func StartCommand(update tgbotapi.Update) {
 func SendMessageToAnotherUser(update tgbotapi.Update) {
 	secondUser := GetSecondUser(int64(update.Message.From.ID))
 
-	var msg interface{}
+	var msg tgbotapi.Chattable
 
 	if update.Message.Text != "" {
 		msg = tgbotapi.NewMessage(secondUser, update.Message.Text)
@@ -320,26 +320,6 @@ func BotSendMessage(message tgbotapi.Chattable) {
 	var err error
 
 	_, err = Bot.Send(message)
-	//switch v := message.(type) {
-	//case tgbotapi.MessageConfig:
-	//	_, err = Bot.Send(v)
-	//case tgbotapi.PhotoConfig:
-	//	_, err = Bot.Send(v)
-	//case tgbotapi.VoiceConfig:
-	//	_, err = Bot.Send(v)
-	//case tgbotapi.AnimationConfig:
-	//	_, err = Bot.Send(v)
-	//case tgbotapi.AudioConfig:
-	//	_, err = Bot.Send(v)
-	//case tgbotapi.StickerConfig:
-	//	_, err = Bot.Send(v)
-	//case tgbotapi.DocumentConfig:
-	//	_, err = Bot.Send(v)
-	//case tgbotapi.VideoConfig:
-	//	_, err = Bot.Send(v)
-	//case tgbotapi.VideoNoteConfig:
-	//	_, err = Bot.Send(v)
-	//}
 
 	if err != nil {
 		BotSendMessageError(err)
