@@ -148,7 +148,7 @@ func NewChatButton(update tgbotapi.Update) {
 	msg := tgbotapi.NewMessage(userID, "Search started")
 	if update.Message.From.LanguageCode == "ru" || update.Message.From.LanguageCode == "ua" {
 		msg = tgbotapi.NewMessage(userID, "Поиск начался")
-	} else if update.Message.From.LanguageCode == "ro-MD" {
+	} else if update.Message.From.LanguageCode == "ro" {
 		msg = tgbotapi.NewMessage(userID, "Căutarea a început")
 	}
 
@@ -248,7 +248,7 @@ func StartCommand(update tgbotapi.Update) {
 			"Если ты хочешь посмотреть, как работает бот - вот мое видео (https://www.youtube.com/watch?v=drtAdOByW54&t=1s)\n\n" +
 			"Если у тебя есть вопросы или предложения, пожалуйста, свяжись со мной, @YUART\n\n"
 		msg.ReplyMarkup = chatControlKeyboardRU
-	} else if update.Message.From.LanguageCode == "ro-MD" {
+	} else if update.Message.From.LanguageCode == "ro" {
 		msg.Text = "Bună, acesta este chatul AnonChatMoldova - un chat anonim în care îți poți exprima gândurile fără consecințe.\n\n" +
 			"Pentru a începe un chat cu un străin, dă click pe butonul \"Incepe conversatia\".\n\n" +
 			"Pentru a părăsi chatul, dă click pe butonul \"Părăsește chatul/camera\".\n\n" +
@@ -337,7 +337,7 @@ func SendMessageToAnotherUser(update tgbotapi.Update) {
 	if msg == nil {
 		if update.Message.From.LanguageCode == "ru" || update.Message.From.LanguageCode == "ua" {
 			msg = tgbotapi.NewMessage(int64(update.Message.From.ID), "Бот не может это отправить. Пожалуйста, свяжитесь с администрацией")
-		} else if update.Message.From.LanguageCode == "ro-MD" {
+		} else if update.Message.From.LanguageCode == "ro" {
 			msg = tgbotapi.NewMessage(int64(update.Message.From.ID),"Botul nu poate trimite asta. Vă rugăm să contactați administrația")
 		} else {
 			msg = tgbotapi.NewMessage(int64(update.Message.From.ID), "Bot cannot send this yet! Please, contact with creator")
@@ -365,7 +365,7 @@ func JoinRoomTokenMessage(update tgbotapi.Update) {
 	msg := tgbotapi.NewMessage(int64(update.Message.From.ID), "Now provide the secret token. Please, type word 'token', space and provide token")
 	if update.Message.From.LanguageCode == "ru" || update.Message.From.LanguageCode == "ua" {
 		msg.Text = "Теперь введите секретный токен. Пожалуйста, напишите слово 'token', пробел, и введите токен"
-	} else if update.Message.From.LanguageCode == "ro-MD" {
+	} else if update.Message.From.LanguageCode == "ro" {
 		msg.Text = "Acum introduceți simbolul secret. Vă rugăm să scrieți cuvântul „token”, un spațiu și introduceți simbolul"
 	}
 
@@ -377,7 +377,7 @@ func LeaveChatMessage(update tgbotapi.Update, userID int64, secondUser int64) {
 
 	if update.Message.From.LanguageCode == "ru" || update.Message.From.LanguageCode == "ua" {
 		msg = tgbotapi.NewMessage(userID, "Вы покинули чат")
-	} else if update.Message.From.LanguageCode == "ro-MD" {
+	} else if update.Message.From.LanguageCode == "ro" {
 		msg = tgbotapi.NewMessage(userID, "Ai părăsit chatul")
 	}
 
@@ -389,7 +389,7 @@ func DeleteRoomMessage(update tgbotapi.Update, userID int64) {
 	msg := tgbotapi.NewMessage(userID, "You delete a secret room")
 	if update.Message.From.LanguageCode == "ru" || update.Message.From.LanguageCode == "ua" {
 		msg = tgbotapi.NewMessage(userID, "Вы удалили секретную комнату")
-	} else if update.Message.From.LanguageCode == "ro-MD" {
+	} else if update.Message.From.LanguageCode == "ro" {
 		msg = tgbotapi.NewMessage(userID, "Ați șters camera secretă")
 	}
 
@@ -401,7 +401,7 @@ func CreateRoomMessage(update tgbotapi.Update, token string) {
 
 	if update.Message.From.LanguageCode == "ru" || update.Message.From.LanguageCode == "ua" {
 		msg.Text = fmt.Sprintf("Вы создали секретную комнату. Ваш секретный токен %v. Передайте его другому человеку, что бы он мог подключиться к комнате.", token)
-	} else if update.Message.From.LanguageCode == "ro-MD" {
+	} else if update.Message.From.LanguageCode == "ro" {
 		msg.Text = fmt.Sprintf("Ați creat o cameră secretă. Token-ul tău secret %v. Dă-i altei persoane, astfel încât să se poată conecta la cameră.", token)
 	}
 
@@ -413,7 +413,7 @@ func JoinRoomMessage(update tgbotapi.Update, roomAuthor int64) {
 
 	if update.Message.From.LanguageCode == "ru" || update.Message.From.LanguageCode == "ua" {
 		msg.Text = "Вы присоединились к секретной комнате"
-	} else if update.Message.From.LanguageCode == "ro-MD" {
+	} else if update.Message.From.LanguageCode == "ro" {
 		msg.Text = "Te-ai alăturat camerei secrete"
 	}
 
@@ -430,7 +430,7 @@ func InvalidTokenError(update tgbotapi.Update) {
 
 	if update.Message.From.LanguageCode == "ru" || update.Message.From.LanguageCode == "ua" {
 		msg.Text = "Не могу найти комнату с таким токеном"
-	} else if update.Message.From.LanguageCode == "ro-MD" {
+	} else if update.Message.From.LanguageCode == "ro" {
 		msg.Text = "Nu găsesc o cameră cu un astfel de Token"
 	}
 
@@ -442,7 +442,7 @@ func InvalidTokenFormError(update tgbotapi.Update) {
 
 	if update.Message.From.LanguageCode == "ru" || update.Message.From.LanguageCode == "ua" {
 		msg.Text = "Токен был введен не правильно"
-	} else if update.Message.From.LanguageCode == "ro-MD" {
+	} else if update.Message.From.LanguageCode == "ro" {
 		msg.Text = "Token-ul a fost introdus incorect"
 	}
 
@@ -454,7 +454,7 @@ func AlreadySearchingError(user int64, update tgbotapi.Update) {
 
 	if update.Message.From.LanguageCode == "ru" || update.Message.From.LanguageCode == "ua" {
 		msg.Text = "Вы уже ищите чат"
-	} else if update.Message.From.LanguageCode == "ro-MD" {
+	} else if update.Message.From.LanguageCode == "ro" {
 		msg.Text = "Căutați deja un chat"
 	}
 
@@ -466,7 +466,7 @@ func AlreadyChattingError(user int64, update tgbotapi.Update) {
 
 	if update.Message.From.LanguageCode == "ru" || update.Message.From.LanguageCode == "ua" {
 		msg.Text = "Вы уже в чате"
-	} else if update.Message.From.LanguageCode == "ro-MD" {
+	} else if update.Message.From.LanguageCode == "ro" {
 		msg.Text = "Sunteti deja in chat"
 	}
 
@@ -478,7 +478,7 @@ func RoomAuthorError(user int64, update tgbotapi.Update) {
 
 	if update.Message.From.LanguageCode == "ru" || update.Message.From.LanguageCode == "ua" {
 		msg.Text = "Вы автор секретной комнаты. Подождите второго человека или выйдите из комнаты"
-	} else if update.Message.From.LanguageCode == "ro-MD" {
+	} else if update.Message.From.LanguageCode == "ro" {
 		msg.Text = "Ești autorul camerei secrete. Așteptați a doua persoană sau părăsiți camera"
 	}
 
@@ -490,7 +490,7 @@ func NotChattingError(user int64, update tgbotapi.Update) {
 
 	if update.Message.From.LanguageCode == "ru" || update.Message.From.LanguageCode == "ua" {
 		msg.Text = "Вы не находитесь в чате"
-	} else if update.Message.From.LanguageCode == "ro-MD" {
+	} else if update.Message.From.LanguageCode == "ro" {
 		msg.Text = "Nu va aflati in niciun chat"
 	}
 
