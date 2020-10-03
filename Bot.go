@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/Syfaro/telegram-bot-api"
 	"log"
+	"net/http"
 	"os"
 	"strings"
 )
@@ -63,12 +64,13 @@ func BotUpdateLoop() {
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
 
-	_, err := Bot.SetWebhook(tgbotapi.NewWebhook(os.Getenv("PUBLIC_URL") + ":" + os.Getenv("PORT") + "/" + os.Getenv("BOT_TOKEN")))
+	_, err := Bot.SetWebhook(tgbotapi.NewWebhook(os.Getenv("PUBLIC_URL")  + "/" + os.Getenv("BOT_TOKEN")))
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	updates := Bot.ListenForWebhook("/" + os.Getenv("BOT_TOKEN"))
+	go http.ListenAndServe("0.0.0.0:" + os.Getenv("PORT"), nil)
 
 	//updates, err = Bot.GetUpdatesChan(u)
 	//if err != nil {
