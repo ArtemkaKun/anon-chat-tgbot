@@ -18,3 +18,4 @@ idea/
 *.yaml
 *.txt
 *.gcloudignore
+*.Dockerfile
