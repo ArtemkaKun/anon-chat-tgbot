@@ -63,7 +63,7 @@ func BotUpdateLoop() {
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
 
-	_, err := Bot.SetWebhook(tgbotapi.NewWebhook(os.Getenv("PUBLIC_URL") + ":" + os.Getenv("PORT") + "/" + os.Getenv("BOT_TOKEN")))
+	_, err := Bot.SetWebhook(tgbotapi.NewWebhook(os.Getenv("PUBLIC_URL") + ":8443" + "/" + os.Getenv("BOT_TOKEN")))
 	if err != nil {
 		log.Fatal(err)
 	}
